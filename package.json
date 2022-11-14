@@ -1,0 +1,37 @@
+{
+  "name": "detect-string",
+  "displayName": "Detect string",
+  "version": "0.1",
+  "description": "Create a filter to detect phrases in strings.",
+  "private": "true",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "prestart": "yarn build",
+    "start": "node dist",
+    "lint": "eslint . --ext .ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kruimeldief/detect-string.git"
+  },
+  "author": {
+    "name": "Dennis Kruijt"
+  },
+  "license": "GPLv3",
+  "bugs": {
+    "url": "https://github.com/Kruimeldief/detect-string/issues"
+  },
+  "homepage": "https://github.com/Kruimeldief/detect-string#readme",
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
+    "eslint": "^8.27.0",
+    "ts-node": "^10.9.1"
+  },
+  "dependencies": {
+    "node": "^19.0.1"
+  }
+}
