@@ -9,7 +9,7 @@ This package is not yet available.
 ## Example
 
 ```Typescript
-import { BinarySearchTreeBuilder } from "detect-string";
+import { BinarySearchTreeBuilder } from './bst/binarySearchTreeBuilder';
 
 const tree = new BinarySearchTreeBuilder()
   .add([
