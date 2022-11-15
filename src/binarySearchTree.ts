@@ -17,14 +17,14 @@ export class BinarySearchTree {
       if (typeof compare === 'undefined') {
         return 0;
       }
-      else if (compare < 0) {
+      if (compare === 0) {
+        return this.rates[i - 1];
+      }
+      if (compare < 0) {
         i = i * 2 + 1;
       }
-      else if (compare > 0) {
-        i = i * 2;
-      }
       else {
-        return this.rates[i - 1];
+        i = i * 2;
       }
     }
     return 0;

@@ -1,5 +1,5 @@
-import { RateOptions } from './options';
-import { BinarySearchTree } from './binarySearchTree';
+import type { RateOptions, TreeOptions } from './options.js';
+import { BinarySearchTree } from './binarySearchTree.js';
 
 interface Node {
   string: string,
@@ -8,12 +8,15 @@ interface Node {
 
 export class BinarySearchTreeBuilder {
   list: Node[]
+  sanitize: boolean;
 
   /**
    * Constructor.
    */
-  constructor() {
+  constructor(options?: TreeOptions) {
     this.list = new Array<Node>();
+    this.sanitize = options?.sanitize || false;
+    // TODO: Consider using setters instead of an option object (keyof object)
   }
 
   #addString(string: string, rate = 0, rateOptions?: RateOptions) {

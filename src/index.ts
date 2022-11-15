@@ -1,5 +1,19 @@
-import { BinarySearchTreeBuilder } from "./bst/binarySearchTreeBuilder";
+import { characterSet } from "./sanitizer.js";
+import { BinarySearchTreeBuilder } from "./binarySearchTreeBuilder.js";
 
+/**
+ * Examples
+ */
+
+// Print all substitution characters for character '2'.
+console.log(characterSet['2']);
+// Prints [
+//   'Ƨ', 'Ϩ', 'ᒿ', 'Ꙅ',
+//   'ꛯ', 'Ꝛ', '𝟐' , '𝟚' ,
+//   '𝟤' , '𝟮' , '𝟸' , '🯲'
+// ]
+
+// BSTBuilder.
 const tree = new BinarySearchTreeBuilder()
   .add([
     'pancake', 'candy', 'cookie', 'chocolate',
