@@ -9,32 +9,36 @@ test('Add empty string to tree', () => {
   expect(() => new BinarySearchTreeBuilder().add('')).toThrow();
 })
 
-test('Add string to tree with rateOptions', () => {
+test('Add string to tree with rateOption overwrite', () => {
   const tree = new BinarySearchTreeBuilder()
     .add('string', 0)
-    .add('string', 1, { overwriteRate: true });
+    .add('string', 1, 'overwrite');
   expect(tree.list).toMatchObject([{ string: 'string', rate: 1 }]);
 });
 
-test('Add string to tree with rateOptions (2)', () => {
+test('Add string to tree with rateOption useHighest', () => {
   const tree = new BinarySearchTreeBuilder()
     .add('string', 1)
-    .add('string', 0, { useHighestRate: true });
+    .add('string', 0, 'useHighest');
   expect(tree.list).toMatchObject([{ string: 'string', rate: 1 }]);
 });
 
-test('Add string to tree with rateOptions (2)', () => {
+test('Add string to tree with rateOption useLowest', () => {
   const tree = new BinarySearchTreeBuilder()
-    .add('string', 1)
-    .add('string', 0, { overwriteRate: true, useHighestRate: true });
+    .add('string', 0)
+    .add('string', 1, 'useLowest');
+  expect(tree.list).toMatchObject([{ string: 'string', rate: 0 }]);
+});
+
+test('Add string to tree with rateOption useLowest', () => {
+  const tree = new BinarySearchTreeBuilder()
+    .add('string', 0)
+    .add('string', 1, 'skip');
   expect(tree.list).toMatchObject([{ string: 'string', rate: 0 }]);
 });
 
 test('Add existing string to tree', () => {
-  const tree = new BinarySearchTreeBuilder()
-    .add('string', 0)
-    .add('string', 1);
-  expect(tree.list).toMatchObject([{ string: 'string', rate: 0 }]);
+  expect(() => new BinarySearchTreeBuilder().add('string', 0).add('string', 1)).toThrow();
 });
 
 test('Add array of strings to tree', () => {

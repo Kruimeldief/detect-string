@@ -11,7 +11,8 @@ This package is not yet available.
 ```Typescript
 import { BinarySearchTreeBuilder } from './bst/binarySearchTreeBuilder';
 
-const tree = new BinarySearchTreeBuilder()
+// BSTBuilder.
+const tree = new BinarySearchTreeBuilder({sanitizeOptions: {}})
   .add([
     'pancake', 'candy', 'cookie', 'chocolate',
     'cupcake', 'pie', 'pastry', 'ice cream',
@@ -27,13 +28,12 @@ const tree = new BinarySearchTreeBuilder()
   .build();
 
 console.log(tree.search('pancake'));
-console.log(tree.search('cucumber'));
-// Prints '3' and '7' respectively.
-
-console.log(tree.search('abc123'));
-console.log(tree.search('mushroom'));
-// Both print '0' (default) because string is not found.
+// Prints { hasMatch: true, match: 'pancake', rate: 3, sanitized: 'pancake' }
 
 console.log(tree.search('pink mushroom'));
-// Prints '0' (default) because string has no specifieed rating.
+// Prints { hasMatch: true, match: 'pink mushroom', rate: 0, sanitized: 'pink mushroom' }
+
+console.log(tree.search('abc123')); // Never added
+console.log(tree.search('mushroom')); // Added and removed
+// Both print { hasMatch: false }
 ```

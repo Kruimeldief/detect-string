@@ -7,11 +7,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "build": "tsc",
     "prestart": "yarn build",
     "start": "node dist",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "rawstart": "node dist"
   },
   "repository": {
     "type": "git",
@@ -40,22 +41,5 @@
     "jest": "^29.3.1",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1"
-  },
-  "dependencies": {
-    "@types/node-fetch": "^2.6.2",
-    "node-fetch": "^3.3.0"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "extensionsToTreatAsEsm": [".ts"],
-    "globals": {
-      "ts-jest": {
-        "useESM": true
-      }
-    },
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
   }
 }

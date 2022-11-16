@@ -1,26 +1,46 @@
-export type RateOptions = {
-  overwriteRate?: boolean,
-  useHighestRate?: boolean
-};
+/**
+ * Specify the rate of a string if the string already exists.
+ * @argument overwrite Overwrite the existing rate of a string if string already exists.
+ * @argument useLowest Use the lowest rate of a string if string already exists.
+ * @argument useHighest Use the highest rate of a string if string already exists.
+ * @argument skip Use the original rate of a string if string already exists.
+ */
+export type RateOption = 'overwrite' | 'useLowest' | 'useHighest' | 'skip';
 
+/**
+ * Options for the binary search tree builder.
+ * @param priority Prioritize a system aspect.
+ * @param rateOption Specify the rate of a string if the string already exists.
+ * @param sanitizeOptions Modify the return string to specifications.
+ * @param searchOptions Modify the string for search in the binary search tree.
+ */
 export type TreeOptions = {
-  sanitize?: boolean,
-  sanitizeOptions?: SanitizeOptions
+  priority?: 'memory' | 'cpu', // Among other things, pre-initialising lists in sanitizer.js.
+  rateOption?: RateOption,
+  sanitizeOptions?: StringOptions,
+  searchOptions?: StringOptions,
 }
 
 /**
- * TODO:
- * - Remove emojis.
- * - Remove numbers and/or change numbers into letters (ideally not limited to latin).
- * - Remove punctuation and/or change punctuation into letters (ideally not limited to latin).
- * - Remove certain type of characters.
+ * Options for string modification.
+ * @param confusables Uncommon characters that look similar to more commonly used characters.
+ * @param emojis All emojis including symbols such as ☺ ☻ ♥ ♦ ♣ ♠.
+ * @param numbers Any Arabic numerals that may be used as letters such as f00.
+ * @param punctuation Any common punctuation in the English language. May add unicode support.
+ * @param casing Force a casing on the characters.
+ * @argument allow Allow the type of characters.
+ * @argument remove Remove the type of characters.
+ * @argument latinize Replace the type of characters each with their corresponding confusable latin character.
+ * @argument original Keep the original casing of all characters whether lower- or uppercase.
+ * @argument lowercase Change all characters to lowercase if possible.
+ * @argument uppercase Change all characters to uppercase if possible.
  */
-export type SanitizeOptions = {
-  characters?: boolean,
-  emojis?: boolean,
-  numbers?: boolean,
-  punctuation?: boolean,
-  charType?: CharType
+type StringOptions = {
+  confusables?: 'allow' | 'remove',
+  emojis?: 'allow' | 'remove' | 'latinize',
+  numbers?: 'allow' | 'latinize',
+  punctuation?: 'allow' | 'remove' | 'latinize',
+  casing?: 'original' | 'lowercase' | 'uppercase',
 }
 
 /**
@@ -53,17 +73,18 @@ export type SanitizeOptions = {
  *                    Script_Extensions values containing a script in Table 5, Recommended Scripts
  *                    in [UAX31], except for those characters that are Restricted above.
  */
-type CharType = {
-  notCharacter?: boolean,
-  depreciated?: boolean,
-  defaultIgnorable?: boolean,
-  notNFKC?: boolean,
-  notXID?: boolean,
-  exclusion?: boolean,
-  obsolete?: boolean,
-  technical?: boolean,
-  uncommonUse?: boolean,
-  limitedUse?: boolean,
-  inclusion?: boolean,
-  recommended?: boolean
-}
+// type CharType = {
+//   notCharacter?: 'allow' | 'remove',
+//   depreciated?: 'allow' | 'remove',
+//   defaultIgnorable?: 'allow' | 'remove',
+//   notNFKC?: 'allow' | 'remove',
+//   notXID?: 'allow' | 'remove',
+//   exclusion?: 'allow' | 'remove',
+//   obsolete?: 'allow' | 'remove',
+//   technical?: 'allow' | 'remove',
+//   uncommonUse?: 'allow' | 'remove',
+//   limitedUse?: 'allow' | 'remove',
+//   inclusion?: 'allow' | 'remove',
+//   recommended?: 'allow' | 'remove'
+// }
+

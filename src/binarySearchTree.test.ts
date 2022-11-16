@@ -9,13 +9,60 @@ test('Search for value in binary search tree', () => {
   array[5] = 'e';
   const tree = new BinarySearchTree(
     array,
-    [4, 2, 6, 0, 3, 5]
+    [4, 2, 6, 0, 3, 5],
+    {
+      priority: 'cpu',
+      rateOption: 'useHighest',
+      searchOptions: {
+        confusables: 'remove',
+        emojis: 'latinize',
+        numbers: 'latinize',
+        punctuation: 'remove',
+        casing: 'lowercase',
+      },
+      sanitizeOptions: {
+        confusables: 'remove',
+        emojis: 'allow',
+        numbers: 'allow',
+        punctuation: 'allow',
+        casing: 'original',
+      }
+    }
   );
-  expect(tree.search('a')).toBe(0);
-  expect(tree.search('b')).toBe(2);
-  expect(tree.search('c')).toBe(3);
-  expect(tree.search('d')).toBe(4);
-  expect(tree.search('e')).toBe(5);
-  expect(tree.search('f')).toBe(6);
-  expect(tree.search('g')).toBe(0);
+  expect(tree.search('a')).toMatchObject({
+    'hasMatch': false
+  });
+  expect(tree.search('b')).toMatchObject({
+    'hasMatch': true,
+    'match': 'b',
+    'rate': 2,
+    'sanitized': 'b'
+  });
+  expect(tree.search('c')).toMatchObject({
+    'hasMatch': true,
+    'match': 'c',
+    'rate': 3,
+    'sanitized': 'c'
+  });
+  expect(tree.search('d')).toMatchObject({
+    'hasMatch': true,
+    'match': 'd',
+    'rate': 4,
+    'sanitized': 'd'
+  });
+  expect(tree.search('e')).toMatchObject({
+    'hasMatch': true,
+    'match': 'e',
+    'rate': 5,
+    'sanitized': 'e'
+  });
+  expect(tree.search('f')).toMatchObject({
+    'hasMatch': true,
+    'match': 'f',
+    'rate': 6,
+    'sanitized': 'f'
+  });
+  expect(tree.search('g')).toMatchObject({
+    'hasMatch': false
+  });
 });
