@@ -1,10 +1,89 @@
 import type { RateOption, TreeOptions } from './options.js';
-import { BinarySearchTree } from './binarySearchTree.js';
-import { Sanitizer } from './sanitizer.js';
+import { CharacterSet, CharacterSetBuilder } from './characterSetBuilder.js';
 
+/**
+ * Interface object to combine string and rate into a simple Node array.
+ */
 interface Node {
   string: string,
   rate: number,
+}
+
+/**
+ * Return object for BinarySearchTree.search() function.
+ */
+type Output = {
+  hasMatch: boolean,
+  match?: string,
+  rate?: number,
+  sanitized?: string
+}
+
+class BinarySearchTree {
+  /**
+   * String tree nodes.
+   */
+  public readonly strings: string[];
+
+  /**
+   * Rate tree nodes.
+   */
+  public readonly rates: number[];
+
+  /**
+   * Tree options.
+   */
+  public readonly treeOptions: TreeOptions;
+
+  /**
+   * Character set that purifies strings.
+   */
+  public readonly characterSet: CharacterSet;
+
+  /**
+   * Constructor.
+   */
+  public constructor(strings: string[], rates: number[], treeOptions: TreeOptions, characterSet: CharacterSet) {
+    this.strings = strings;
+    this.rates = rates;
+    this.treeOptions = treeOptions;
+    this.characterSet = characterSet;
+  }
+
+  /**
+   * Search a string in the binary search tree.
+   * @param string Input string.
+   * @returns Informative object.
+   */
+  public search(string: string): Output {
+    string = this.characterSet.purify(string);
+    let i = 1;
+    while (i <= this.strings.length) {
+      const compare = this.strings[i - 1]?.localeCompare(string);
+      if (typeof compare === 'undefined') {
+        return {
+          'hasMatch': false
+        }
+      }
+      if (compare === 0) {
+        return {
+          'hasMatch': true,
+          'match': this.strings[i - 1],
+          'rate': this.rates[i - 1],
+          'sanitized': string
+        }
+      }
+      if (compare < 0) {
+        i = i * 2 + 1;
+      }
+      else {
+        i = i * 2;
+      }
+    }
+    return {
+      'hasMatch': false
+    }
+  }
 }
 
 export class BinarySearchTreeBuilder {
@@ -12,6 +91,7 @@ export class BinarySearchTreeBuilder {
    * List with nodes.
    */
   private _list: Node[];
+  get list(): Node[] { return this._list; }
 
   /**
    * Binary search tree options.
@@ -19,30 +99,9 @@ export class BinarySearchTreeBuilder {
   private _options: TreeOptions;
 
   /**
-   * Sanitizer instance with which to 'sanitize' strings.
+   * Character set that purifies strings.
    */
-  private _sanitizer: Sanitizer;
-
-  /**
-   * Getter for the node list.
-   */
-  get list(): Node[] {
-    return this._list;
-  }
-
-  /**
-   * Getter for the tree options.
-   */
-  get options(): TreeOptions {
-    return this._options;
-  }
-
-  /**
-   * Setter for the tree options.
-   */
-  set options(options: TreeOptions) {
-    Object.assign(this._options, options);
-  }
+  private _characterSet: CharacterSet;
 
   /**
    * Constructor.
@@ -50,7 +109,6 @@ export class BinarySearchTreeBuilder {
   constructor(options?: TreeOptions) {
     this._list = new Array<Node>();
     this._options = {
-      priority: 'cpu',
       rateOption: 'useHighest',
       searchOptions: {
         confusables: 'remove',
@@ -65,10 +123,27 @@ export class BinarySearchTreeBuilder {
         numbers: 'allow',
         punctuation: 'allow',
         casing: 'original',
-      },
+      }
     }
     Object.assign(this._options, options);
-    this._sanitizer = Sanitizer.instance;
+    if (this._options.characterSet === undefined) {
+      this._characterSet = new CharacterSetBuilder().build();
+    }
+    else if (this._options.characterSet === null) {
+      this._characterSet = new CharacterSetBuilder({ defaultSets: {
+        confusablesPackage: 'skip',
+        confusablesUnicode: 'skip'
+      } }).build();
+    }
+    else if (this._options.characterSet instanceof CharacterSet) {
+      this._characterSet = this._options.characterSet;
+    }
+    else {
+      throw new Error('Character set of type "'
+        + typeof this._options.characterSet
+        + '" is invalid.');
+      
+    }
   }
 
   /**
@@ -143,7 +218,7 @@ export class BinarySearchTreeBuilder {
    * Remove a string or array of strings from the binary search tree.
    * @param strings Strings to remove from the binary search tree.
    */
-  public remove(strings: string | string[]): this {
+  public remove(...strings: string[]): this {
     if (typeof strings === 'string') {
       this.removeString(strings);
     }
@@ -175,7 +250,7 @@ export class BinarySearchTreeBuilder {
 
     // Sanitize and sort to get the correct medians.
     this._list = this._list.map((item) => {
-      item.string = this._sanitizer.sanitize(item.string);
+      item.string = this._characterSet.purify(item.string);
       return item;
     }).sort((a, b) => a.string.localeCompare(b.string));
 
@@ -214,7 +289,7 @@ export class BinarySearchTreeBuilder {
       i2++;
     }
 
-    const tree = new BinarySearchTree(stringTree, rateTree, this._options);
+    const tree = new BinarySearchTree(stringTree, rateTree, this._options, this._characterSet);
     this._list = [];
     return tree;
   }

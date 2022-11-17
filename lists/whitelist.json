@@ -1,0 +1,15 @@
+{
+  "__Comment_1": "Whitelist characters that you don't want to be replaced with another character.",
+  "__Comment_2": "Each string may contain only one (1) character.",
+  "__Comment_3": "These default whitelisted characters correct the Unicode.org confusables (confusables.txt).",
+  "__Comment_4": "An example of a correction is 'm' -> 'rn'.",
+  "__ranges": "The nested arrays are the start and end character of a range.",
+  "ranges": [
+    [" ", "#"],
+    ["%", "?"],
+    ["a", "_"],
+    ["A", "~"]
+  ],
+  "__characters": "Characters is an array with string characters.",
+  "characters": []
+}

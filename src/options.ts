@@ -1,3 +1,5 @@
+import type { CharacterSet } from './characterSetBuilder';
+
 /**
  * Specify the rate of a string if the string already exists.
  * @argument overwrite Overwrite the existing rate of a string if string already exists.
@@ -15,8 +17,8 @@ export type RateOption = 'overwrite' | 'useLowest' | 'useHighest' | 'skip';
  * @param searchOptions Modify the string for search in the binary search tree.
  */
 export type TreeOptions = {
-  priority?: 'memory' | 'cpu', // Among other things, pre-initialising lists in sanitizer.js.
   rateOption?: RateOption,
+  characterSet?: CharacterSet | null,
   sanitizeOptions?: StringOptions,
   searchOptions?: StringOptions,
 }
@@ -41,6 +43,22 @@ type StringOptions = {
   numbers?: 'allow' | 'latinize',
   punctuation?: 'allow' | 'remove' | 'latinize',
   casing?: 'original' | 'lowercase' | 'uppercase',
+}
+
+/**
+ * @param defaultSet Specify the content of the default character set.
+ * @link https://unicode.org/reports/tr44/#General_Category_Values
+ */
+export type CSOptions = {
+  defaultSets?: {
+    confusablesUnicode?: 'use' | 'skip',
+    confusablesPackage?: 'use' | 'skip',
+  },
+  characterTypes?: {
+    titlecase?: 'allow' | 'disallow', // Lt	Titlecase_Letter	  a digraphic character, with first part uppercase
+    modifiers?: 'allow' | 'disallow', // Lm	Modifier_Letter	    a modifier letter
+    combiners?: 'allow' | 'disallow', // M	  Mark	              Mn | Mc | Me
+  },
 }
 
 /**

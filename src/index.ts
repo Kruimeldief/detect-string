@@ -1,11 +1,19 @@
-import { BinarySearchTreeBuilder } from "./binarySearchTreeBuilder.js";
+import { BinarySearchTreeBuilder } from './binarySearchTreeBuilder.js';
+import { CharacterSetBuilder } from './characterSetBuilder.js';
 
 /**
  * Examples
  */
 
 // BSTBuilder.
-const tree = new BinarySearchTreeBuilder({sanitizeOptions: {}})
+const tree = new BinarySearchTreeBuilder({
+  characterSet: new CharacterSetBuilder({
+    defaultSets: {
+      confusablesPackage: 'skip',
+      confusablesUnicode: 'skip'
+    }
+  }).build()
+})
   .add([
     'pancake', 'candy', 'cookie', 'chocolate',
     'cupcake', 'pie', 'pastry', 'ice cream',
