@@ -1,9 +1,19 @@
 import { regexFormat, removeDuplicates } from './utils.js';
 import fs from 'fs';
-import type { CSOptions } from './options.js';
+import type { CSBOptions } from './options.js';
 
-type Set = { [key: string]: string[] };
-type RegexSet = { [key: string]: RegExp };
+export type confusableSet = Record<string, string[]>;
+type RegexSet = Record<string, RegExp>;
+
+// Property and value should be identical 
+/**
+ * Property and value should be identical to update
+ * the character set options.
+ */
+export enum Purifier {
+  confusables = 'confusables',
+  emojis = 'emojis'
+}
 
 /**
  * Interface for JSON file /root/lists/confusables.json
@@ -67,7 +77,7 @@ export class CharacterSet {
    * @param characterSet Set of character regexes.
    * @param csOptions Character set options to specify functionalities and performance.
    */
-  public constructor(characterSet: Set) {
+  public constructor(characterSet: confusableSet) {
     this._keyList = Object.keys(characterSet);
     this._characterSet = {};
     for (let i = 0, len = this._keyList.length; i < len; i++) {
@@ -93,6 +103,13 @@ export class CharacterSet {
     }
     return string;
   }
+
+  public remove(string: string): string {
+    if (this._size) {
+      return string.split(this._regex).join('');
+    }
+    return string;
+  }
 }
 
 /**
@@ -102,47 +119,42 @@ export class CharacterSetBuilder {
   /**
    * CSB options to specify the character set build.
    */
-  private readonly _options: CSOptions;
+  private readonly _options: CSBOptions;
 
-  private _characterSet: Set;
+  private _characterSet: confusableSet;
 
   private _whitelist: string[];
 
-  public constructor(options?: CSOptions) {
+  public constructor(options?: CSBOptions) {
     this._options = {
-      defaultSets: {
-        confusablesUnicode: 'use',
-        confusablesPackage: 'skip'
-      },
-      characterTypes: {
-        combiners: 'disallow',
-        modifiers: 'disallow',
-        titlecase: 'disallow'
-      }
+      confusablesByUnicode: 'exclude',
+      confusablesByPackage: 'include',
+      confusables: 'purify',
+      emojis: 'allow'
     };
     this._options = Object.assign(this._options, options);
     this._characterSet = {};
     this._whitelist = [];
-    if (this._options.defaultSets?.confusablesPackage === 'use') {
+    if (this._options.confusablesByPackage === 'include') {
       this.loadLocalConfusables();
     }
-    if (this._options.defaultSets?.confusablesUnicode === 'use') {
+    if (this._options.confusablesByUnicode === 'include') {
       this.loadUnicodeConfusables();
     }
     this.refactor();
   }
 
-  public add(set: Set): this {
+  public add(set: confusableSet): this {
     const keyList = Object.keys(set);
     for (let i = 0, len = keyList.length; i < len; i++) {
       const key = keyList[i];
-      this.addCharacters(key, ...set[key]);
+      this.addConfusables(key, ...set[key]);
     }
     return this;
   }
 
-  public whitelist(...strings: string[]): this {
-    this._whitelist.push(...strings);
+  public whitelist(...characters: string[]): this {
+    this._whitelist.push(...characters);
     return this;
   }
 
@@ -195,14 +207,20 @@ export class CharacterSetBuilder {
    * @param key Preferred character.
    * @param values Unwanted character.
    */
-  public addCharacters(key: string, ...values: string[]): void {
-    if (key.length === 0 || values.length === 0) {
-      throw new Error('Key or values cannot be empty.')
+  public addConfusables(key: string, ...values: string[]): this {
+    if (key.length === 0) {
+      throw new Error('Key cannot be empty.')
+    }
+    for (let i = 0, len = values.length; i < len; i++) {
+      if (values[i].length === 0) {
+        throw new Error('Key "' + key + '" cannot have an empty value.');
+      }
     }
     if (typeof this._characterSet[key] === 'undefined') {
       this._characterSet[key] = [];
     }
     this._characterSet[key].push(...values);
+    return this;
   }
 
   /**
@@ -221,7 +239,7 @@ export class CharacterSetBuilder {
         const key = [...array[1].matchAll(/[0-9a-f]+/gi)]
           .map((item) => String.fromCodePoint(parseInt(item[0], 16)))
           .join('');
-        this.addCharacters(key, values);
+        this.addConfusables(key, values);
       });
 
     const whitelist: Whitelist = JSON.parse(fs.readFileSync(new URL('../lists/whitelist.json', import.meta.url), 'utf-8'));
@@ -244,11 +262,11 @@ export class CharacterSetBuilder {
    * Load the local confusables into the character set.
    */
   private loadLocalConfusables(): void {
-    const confusables: Confusables = JSON.parse(fs.readFileSync(new URL('../lists/confusables.json', import.meta.url), 'utf-8'));
+    const confusables: Confusables = JSON.parse(fs.readFileSync(new URL('../lists/newConfusables.json', import.meta.url), 'utf-8'));
     // Add alphabet sets.
     for (let i = 0, c = confusables.alphabetSets, len = c.length; i < len; i++) {
       for (let j = 0, alphabetLen = c[i].alphabet.length; j < alphabetLen; j++) {
-        this.addCharacters(
+        this.addConfusables(
           c[i].alphabet[j],
           ...c[i].characterSet.map((item) => item[j])
         );
@@ -257,7 +275,7 @@ export class CharacterSetBuilder {
     // Add number sets.
     for (let i = 0, c = confusables.numberSet, len = c.length; i < len; i++) {
       for (let j = 0, numberLen = c[i].length; j < numberLen; j++) {
-        this.addCharacters(
+        this.addConfusables(
           String(j),
           c[i][j]
         );
@@ -265,14 +283,14 @@ export class CharacterSetBuilder {
     }
     // Add parallel character set.
     for (let i = 0, c = confusables.parallelCharacterSet, len = c.characterSet.length; i < len; i++) {
-      this.addCharacters(
+      this.addConfusables(
         c.replacementSet[i],
         c.characterSet[i]
       );
     }
     // Add serial character sets.
     for (let i = 0, c = confusables.serialCharacterSets, len = c.length; i < len; i++) {
-      this.addCharacters(
+      this.addConfusables(
         c[i].replacement,
         ...c[i].characterSet
       );
@@ -287,10 +305,14 @@ export class CharacterSetBuilder {
 
     // Remove whitelisted characters.
     const keyList = Object.keys(this._characterSet);
-    const regex = new RegExp(this._whitelist.map((item) => regexFormat(item)).join('|'), 'g');
+    const regex = this._whitelist.length !== 0
+      ? new RegExp(this._whitelist.map((item) => regexFormat(item)).join('|'), 'g')
+      : undefined;
     for (let i = 0, keyLen = keyList.length; i < keyLen; i++) {
       const key = keyList[i];
-      this._characterSet[key] = this._characterSet[key].filter((item) => !regex.test(item));
+      if (regex) {
+        this._characterSet[key] = this._characterSet[key].filter((item) => !regex.test(item));
+      }
     }
 
     // Each one character cannot be assigned to multiple keys.

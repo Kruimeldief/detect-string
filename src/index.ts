@@ -1,43 +1,40 @@
-import { BinarySearchTreeBuilder } from './binarySearchTreeBuilder.js';
-import { CharacterSetBuilder } from './characterSetBuilder.js';
+import { FilterBuilder } from './filter.js';
 
 /**
  * Examples
  */
 
-// BSTBuilder.
-const tree = new BinarySearchTreeBuilder({
-  characterSet: new CharacterSetBuilder({
-    defaultSets: {
-      confusablesPackage: 'skip',
-      confusablesUnicode: 'skip'
-    }
-  }).build()
+const filter = new FilterBuilder({
+  confusablesByPackage: 'include',
+  confusablesByUnicode: 'exclude',
+  confusables: 'purify',
+  doubleRating: 'overwrite',
+  emojis: 'allow'
 })
   .add([
     'pancake', 'candy', 'cookie', 'chocolate',
     'cupcake', 'pie', 'pastry', 'ice cream',
     'dessert', 'cake', 'doughnut', 'muffin'
-  ], 3)
+  ], 1)
   .add([
     'mushroom', 'cucumber', 'leek', 'onion',
     'beet', 'spinach', 'broccoolii', 'corn',
     'yam', 'tomato', 'pumpkin', 'asparagus',
-  ], 7)
-  .add('pancake', 4, 'overwrite')
+  ], 2)
+  .add('pancake', 3, 'overwrite')
   .remove('mushroom')
   .add('pink mushroom') // No rate => use default 0
   .build();
 
-console.log(tree.search('pancake'));
-// Prints { hasMatch: true, match: 'pancake', rate: 4, sanitized: 'pancake' }
+console.log(filter.scan('pancake'));
+// Prints { purified: 'pancake', matches: [ { string: 'pancake', rate: 3 } ] }
 
-console.log(tree.search('chocolate'));
-// Prints { hasMatch: true, match: 'chocolate', rate: 3, sanitized: 'chocolate' }
+console.log(filter.scan('chocolate'));
+// { purified: 'chocolate', matches: [{ string: 'chocolate', rate: 1 }] }
 
-console.log(tree.search('pink mushroom'));
-// Prints { hasMatch: true, match: 'pink mushroom', rate: 0, sanitized: 'pink mushroom' }
+console.log(filter.scan('pink mushroom'));
+// Prints { purified: 'pink mushroom', matches: [{ string: 'pink mushroom', rate: 0 }] }
 
-console.log(tree.search('abc123')); // Never added
-console.log(tree.search('mushroom')); // Added and removed
-// Both print { hasMatch: false }
+console.log(filter.scan('abc123')); // Never added
+console.log(filter.scan('mushroom')); // Added and removed
+// Both print { purified: 'abc123', matches: [] }

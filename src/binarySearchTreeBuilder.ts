@@ -1,5 +1,6 @@
-import type { RateOption, TreeOptions } from './options.js';
-import { CharacterSet, CharacterSetBuilder } from './characterSetBuilder.js';
+import type { CharacterSet } from './characterSetBuilder.js';
+import type { RateOption, BSTBOptions } from './options.js';
+import { removeDuplicates } from './utils.js';
 
 /**
  * Interface object to combine string and rate into a simple Node array.
@@ -12,14 +13,12 @@ interface Node {
 /**
  * Return object for BinarySearchTree.search() function.
  */
-type Output = {
-  hasMatch: boolean,
-  match?: string,
-  rate?: number,
-  sanitized?: string
+export type Match = {
+  string: string,
+  rate: number,
 }
 
-class BinarySearchTree {
+export class BST {
   /**
    * String tree nodes.
    */
@@ -31,23 +30,11 @@ class BinarySearchTree {
   public readonly rates: number[];
 
   /**
-   * Tree options.
-   */
-  public readonly treeOptions: TreeOptions;
-
-  /**
-   * Character set that purifies strings.
-   */
-  public readonly characterSet: CharacterSet;
-
-  /**
    * Constructor.
    */
-  public constructor(strings: string[], rates: number[], treeOptions: TreeOptions, characterSet: CharacterSet) {
+  public constructor(strings: string[], rates: number[]) {
     this.strings = strings;
     this.rates = rates;
-    this.treeOptions = treeOptions;
-    this.characterSet = characterSet;
   }
 
   /**
@@ -55,23 +42,18 @@ class BinarySearchTree {
    * @param string Input string.
    * @returns Informative object.
    */
-  public search(string: string): Output {
-    string = this.characterSet.purify(string);
+  public search(string: string): Match | undefined {
     let i = 1;
     while (i <= this.strings.length) {
       const compare = this.strings[i - 1]?.localeCompare(string);
       if (typeof compare === 'undefined') {
-        return {
-          'hasMatch': false
-        }
+        return;
       }
       if (compare === 0) {
         return {
-          'hasMatch': true,
-          'match': this.strings[i - 1],
-          'rate': this.rates[i - 1],
-          'sanitized': string
-        }
+          string: this.strings[i - 1],
+          rate: this.rates[i - 1]
+        } as Match;
       }
       if (compare < 0) {
         i = i * 2 + 1;
@@ -80,13 +62,11 @@ class BinarySearchTree {
         i = i * 2;
       }
     }
-    return {
-      'hasMatch': false
-    }
+    return;
   }
 }
 
-export class BinarySearchTreeBuilder {
+export class BSTBuilder {
   /**
    * List with nodes.
    */
@@ -96,91 +76,17 @@ export class BinarySearchTreeBuilder {
   /**
    * Binary search tree options.
    */
-  private _options: TreeOptions;
-
-  /**
-   * Character set that purifies strings.
-   */
-  private _characterSet: CharacterSet;
+  private readonly _options: BSTBOptions;
 
   /**
    * Constructor.
    */
-  constructor(options?: TreeOptions) {
+  constructor(options?: BSTBOptions) {
     this._list = new Array<Node>();
     this._options = {
-      rateOption: 'useHighest',
-      searchOptions: {
-        confusables: 'remove',
-        emojis: 'latinize',
-        numbers: 'latinize',
-        punctuation: 'remove',
-        casing: 'lowercase',
-      },
-      sanitizeOptions: {
-        confusables: 'remove',
-        emojis: 'allow',
-        numbers: 'allow',
-        punctuation: 'allow',
-        casing: 'original',
-      }
+      doubleRating: 'throwError'
     }
     Object.assign(this._options, options);
-    if (this._options.characterSet === undefined) {
-      this._characterSet = new CharacterSetBuilder().build();
-    }
-    else if (this._options.characterSet === null) {
-      this._characterSet = new CharacterSetBuilder({ defaultSets: {
-        confusablesPackage: 'skip',
-        confusablesUnicode: 'skip'
-      } }).build();
-    }
-    else if (this._options.characterSet instanceof CharacterSet) {
-      this._characterSet = this._options.characterSet;
-    }
-    else {
-      throw new Error('Character set of type "'
-        + typeof this._options.characterSet
-        + '" is invalid.');
-      
-    }
-  }
-
-  /**
-   * Add a string to the binary search tree.
-   * @param string Node string.
-   * @param rate Node rating: rate the string.
-   * @param rateOption Specify action for the node rating if the string (and rate) already exist.
-   */
-  private addString(string: string, rate = 0, rateOption?: RateOption) {
-    if (this.isValidString(string)) {
-      const index = this._list.findIndex((item) => item.string === string);
-      if (index === -1) {
-        const node: Node = {
-          string: string,
-          rate: rate,
-        }
-        this._list.push(node)
-      }
-      else if (rateOption === 'skip') {
-        return;
-      }
-      else if (rateOption === 'overwrite') {
-        this._list[index].rate = rate;
-      }
-      else if (rateOption === 'useHighest') {
-        this._list[index].rate = Math.max(this._list[index].rate, rate);
-      }
-      else if (rateOption === 'useLowest') {
-        this._list[index].rate = Math.min(this._list[index].rate, rate);
-      }
-      else {
-        throw new Error('Invalid rate option "' + rateOption + '"');
-      }
-    }
-    else {
-      throw new Error('String must contain at least one character.');
-    }
   }
 
   /**
@@ -188,29 +94,51 @@ export class BinarySearchTreeBuilder {
    * @param strings Strings to include in the binary search tree.
    * @param rate Rating of the strings (rank or severity).
    */
-  public add(strings: string | string[], rate = 0, rateOptions?: RateOption): this {
+  public add(strings: string | string[], rate = 0, doubleRating?: RateOption): this {
     if (typeof strings === 'string') {
-      this.addString(strings, rate, rateOptions);
+      strings = [strings];
     }
-    else {
-      const length = strings.length;
-      for (let i = 0; i < length; i++) {
-        this.addString(strings[i], rate, rateOptions);
+
+    for (let i = 0, len = strings.length; i < len; i++) {
+      if (!this.isValidString(strings[i])) {
+        throw new Error('String must contain at least one character.');
+      }
+
+      // Check if string already exists.
+      const index = this._list.findIndex((item) => item.string === strings[i]);
+      if (index === -1) {
+        this._list.push({
+          string: strings[i],
+          rate: rate
+        } as Node)
+      }
+      else {
+        this.fixDoubleRates(index, rate, doubleRating);
       }
     }
     return this;
   }
 
-  /**
-   * Remove a string from the binary search tree.
-   * @param string Node string.
-   */
-  private removeString(string: string) {
-    if (this.isValidString(string) && this._list.length > 0) {
-      const index = this._list.findIndex((item) => item.string === string);
-      if (index !== -1) {
-        this._list.splice(index, 1);
-      }
+  private fixDoubleRates(index: number, rate: number, doubleRating?: RateOption): void {
+    switch (doubleRating || this._options.doubleRating) {
+      case 'skip':
+        return;
+      case 'overwrite':
+        this._list[index].rate = rate;
+        break;
+      case 'useHighest':
+        this._list[index].rate = Math.max(this._list[index].rate, rate);
+        break;
+      case 'useLowest':
+        this._list[index].rate = Math.min(this._list[index].rate, rate);
+        break;
+      case 'throwError':
+        throw new Error(
+          'Cannot add existing string "'
+          + this._list[index].string
+          + '" because doubleRate option is set to "throwError".');
+      default:
+        throw new Error('Invalid doubleRate option provided.');
     }
   }
 
@@ -219,12 +147,12 @@ export class BinarySearchTreeBuilder {
    * @param strings Strings to remove from the binary search tree.
    */
   public remove(...strings: string[]): this {
-    if (typeof strings === 'string') {
-      this.removeString(strings);
-    }
-    else {
-      for (let i = strings.length - 1; i >= 0; i--) {
-        this.removeString(strings[i]);
+    for (let i = strings.length - 1; i >= 0; i--) {
+      if (this.isValidString(strings[i]) && this._list.length > 0) {
+        const index = this._list.findIndex((item) => item.string === strings[i]);
+        if (index !== -1) {
+          this._list.splice(index, 1);
+        }
       }
     }
     return this;
@@ -243,16 +171,31 @@ export class BinarySearchTreeBuilder {
    * Build the binary search tree.
    * @returns Binary search tree.
    */
-  public build(): BinarySearchTree {
+  public build(characterSet?: CharacterSet): BST {
     if (this._list.length === 0) {
       throw new Error('Tree contains no strings.');
     }
 
-    // Sanitize and sort to get the correct medians.
-    this._list = this._list.map((item) => {
-      item.string = this._characterSet.purify(item.string);
-      return item;
-    }).sort((a, b) => a.string.localeCompare(b.string));
+    // Purify strings if specified.
+    if (characterSet !== undefined) {
+      for (let i = 0, len = this._list.length; i < len; i++) {
+        this._list[i].string = characterSet.purify(this._list[i].string);
+      }
+    }
+
+    // Remove doubles created by purifying words.
+    // Example: ['boob', 'b00b'] => ['boob', 'boob']
+    // Reverse search to prevent finding itself if there are doubles.
+    for (let i = this._list.length - 1; i >= 0; i--) {
+      const iDouble = this._list.indexOf(this._list[i]);
+      if (iDouble > 0 && i !== iDouble) {
+        this.fixDoubleRates(iDouble, this._list[i].rate, this._options.doubleRating);
+      }
+    }
+
+    // Function incidentally also sorts the list to get the correct medians.
+    this._list = removeDuplicates(this._list)
+      .sort((a, b) => a.string.localeCompare(b.string));
 
     // Length must be able to accomodate a complete tree.
     const length = this._list.length;
@@ -289,7 +232,7 @@ export class BinarySearchTreeBuilder {
       i2++;
     }
 
-    const tree = new BinarySearchTree(stringTree, rateTree, this._options, this._characterSet);
+    const tree = new BST(stringTree, rateTree);
     this._list = [];
     return tree;
   }

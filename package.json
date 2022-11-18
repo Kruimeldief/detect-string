@@ -1,8 +1,8 @@
 {
-  "name": "detect-string",
-  "displayName": "Detect string",
+  "name": "filter",
+  "displayName": "Filter",
   "version": "0.1",
-  "description": "Create a filter to detect strings.",
+  "description": "Filter strings to a wide aspect of specifications.",
   "main": "src/index.js",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "url": "git+https://github.com/Kruimeldief/detect-string.git"
   },
   "author": {
-    "name": "Dennis Kruijt",
+    "name": "Kruimeldief",
     "url": "https://github.com/Kruimeldief"
   },
   "license": "Apache-2.0",
