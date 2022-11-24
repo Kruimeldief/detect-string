@@ -1,6 +1,7 @@
-import type { CharacterSet } from './characterSetBuilder.js';
-import type { RateOption, BSTBOptions } from './options.js';
-import { removeDuplicates } from './utils.js';
+import type { ProfanityOptions, RateOption } from "../types.js";
+import { removeDuplicates } from "../utils.js";
+import type { CharacterSet } from "../characterSetBuilder.js";
+import { BSTBase } from "./binarySearchTreeBase.js";
 
 /**
  * Interface object to combine string and rate into a simple Node array.
@@ -10,63 +11,7 @@ interface Node {
   rate: number,
 }
 
-/**
- * Return object for BinarySearchTree.search() function.
- */
-export type Match = {
-  string: string,
-  rate: number,
-}
-
-export class BST {
-  /**
-   * String tree nodes.
-   */
-  public readonly strings: string[];
-
-  /**
-   * Rate tree nodes.
-   */
-  public readonly rates: number[];
-
-  /**
-   * Constructor.
-   */
-  public constructor(strings: string[], rates: number[]) {
-    this.strings = strings;
-    this.rates = rates;
-  }
-
-  /**
-   * Search a string in the binary search tree.
-   * @param string Input string.
-   * @returns Informative object.
-   */
-  public search(string: string): Match | undefined {
-    let i = 1;
-    while (i <= this.strings.length) {
-      const compare = this.strings[i - 1]?.localeCompare(string);
-      if (typeof compare === 'undefined') {
-        return;
-      }
-      if (compare === 0) {
-        return {
-          string: this.strings[i - 1],
-          rate: this.rates[i - 1]
-        } as Match;
-      }
-      if (compare < 0) {
-        i = i * 2 + 1;
-      }
-      else {
-        i = i * 2;
-      }
-    }
-    return;
-  }
-}
-
-export class BSTBuilder {
+export abstract class BSTBaseBuilder<T> {
   /**
    * List with nodes.
    */
@@ -76,15 +21,16 @@ export class BSTBuilder {
   /**
    * Binary search tree options.
    */
-  private readonly _options: BSTBOptions;
+  private readonly _options: ProfanityOptions;
 
   /**
    * Constructor.
    */
-  constructor(options?: BSTBOptions) {
+  protected constructor(options?: ProfanityOptions) {
     this._list = new Array<Node>();
     this._options = {
-      doubleRating: 'throwError'
+      doubleRating: 'throwError',
+      defaultProfanityList: 'include'
     }
     Object.assign(this._options, options);
   }
@@ -167,11 +113,13 @@ export class BSTBuilder {
     return string.length > 0;
   }
 
+  public abstract build(): T;
+
   /**
    * Build the binary search tree.
    * @returns Binary search tree.
    */
-  public build(characterSet?: CharacterSet): BST {
+  private createTrees(characterSet?: CharacterSet): T {
     if (this._list.length === 0) {
       throw new Error('Tree contains no strings.');
     }
@@ -232,8 +180,10 @@ export class BSTBuilder {
       i2++;
     }
 
-    const tree = new BST(stringTree, rateTree);
-    this._list = [];
-    return tree;
+    
+
+    return this.activator<BSTBase>(BSTBase)
+
+    return new BSTBase(stringTree, rateTree) as T;
   }
 }

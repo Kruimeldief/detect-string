@@ -1,0 +1,74 @@
+{
+  "__sentences": [
+    "Sentences are words strung together with the separator to create variations on bad language that requires multiple words.",
+    "Use sentences if a string of non-profane words in a specific order should be considered as profanity.",
+    "Add an empty string to a nested array to create a variation that skips that nested array.",
+    "Consider removing the first or last nested array ONLY IF it contains an empty string.",
+    "Expand this array by adding the object { 'rate': 0, 'separator': '', 'variations': [[''], ['']] }",
+    "USE CAUTION: each sentence variation adds [the multiplication of all nested array lengths] (per variation) strings to the profanity list. Read first sentence object comment.",
+    "NOTE: number of string (variatins) impact performance on a logarithm (base 2) scale. Example: a list of 1.000 strings need 10 checks and 1.000.000 strings need 20 checks (only double)."
+  ],
+  "sentences": [
+    {
+      "__comment:": "This sentence produces 11 * 23 * 7 = 1771 strings for the profanity list.",
+      "rate": 0,
+      "separator": " ",
+      "variations": [
+        ["you", "yu", "your", "ur", "yo", "u", "jo", "joe", "yur", "jur", "jour"],
+        ["", "mother", "father", "sister", "brother", "mama", "ma", "mom", "mam", "mum", "mama", "papa", "pa", "dad", "daddy", "pop", "old man", "sis", "homegirl", "babe", "brotha", "bro", "brah"],
+        ["gay", "gey", "gae", "faggot", "fag", "lesbian", "lesbo"]
+      ]
+    }, {
+      "__comment:": "TODO: results in many incorrect spelled words. Maybe remove later on.",
+      "rate": 0,
+      "separator": "",
+      "variations": [
+        ["ass", "arse"],
+        ["bag", "bandit", "bang", "bite", "blaster", "cheek", "clap", "clown", "cock", "cracker", "es", "face", "fuck", "goblin", "grab", "hole", "hat", "head", "hop", "hore", "jack", "jab", "jockey", "kiss", "klown", "lick", "love", "man", "master", "monkey", "mucus", "munch", "nigg", "pack", "pirate", "rang", "shit", "suck", "wad", "whore", "wipe"],
+        ["es", "s", "ed", "er", "ar", "a", "ah"]
+      ]
+    }, {
+      "rate": 0,
+      "separator": "",
+      "variations": [
+        ["ball"],
+        ["", "s"],
+        ["cock", "gag", "gravy", "kick", "lick", "sack", "suck", "bag", "shit", "ock", "sac", "sack"],
+        ["", "ing", "e", "er", "ar", "s"]
+      ]
+    }, {
+      "rate": 0,
+      "separator": "",
+      "variations": [
+        ["ball"],
+        ["", "s"],
+        ["in", "on", "to", "for"],
+        ["you", "yu", "your", "ur", "yo", "u", "jo", "joe", "yur", "jur", "jour"],
+        ["jaw", "face"],
+        ["", "s"]
+      ]
+    }, {
+      "rate": 0,
+      "separator": "",
+      "variations": [
+        [],
+        []
+      ]
+    }, {
+      "rate": 0,
+      "separator": "",
+      "variations": [
+        [],
+        []
+      ]
+    }
+  ],
+  "words": [
+    {
+      "rate": 0,
+      "strings": [
+        
+      ]
+    }
+  ]
+}

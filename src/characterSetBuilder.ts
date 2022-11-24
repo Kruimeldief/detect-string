@@ -1,6 +1,6 @@
 import { regexFormat, removeDuplicates } from './utils.js';
 import fs from 'fs';
-import type { CSBOptions } from './options.js';
+import type { CSBOptions } from './types.js';
 
 export type confusableSet = Record<string, string[]>;
 type RegexSet = Record<string, RegExp>;
@@ -12,7 +12,7 @@ type RegexSet = Record<string, RegExp>;
  */
 export enum Purifier {
   confusables = 'confusables',
-  emojis = 'emojis'
+  // emojis = 'emojis'
 }
 
 /**
@@ -98,8 +98,10 @@ export class CharacterSet {
     if (!this._size || !this._regex.test(string)) {
       return string;
     }
-    for (let i = 0; i < this._size; i++) {
-      string = string.split(this._valueList[i]).join(this._keyList[i])
+    let i = 0, len = this._size;
+    while (i++ < len) {
+      string = string.replace(this._valueList[i], this._keyList[i]); // 20020 ops
+      // string = string.split(this._valueList[i]).join(this._keyList[i]) // 19182 ops
     }
     return string;
   }
@@ -130,7 +132,7 @@ export class CharacterSetBuilder {
       confusablesByUnicode: 'exclude',
       confusablesByPackage: 'include',
       confusables: 'purify',
-      emojis: 'allow'
+      // emojis: 'allow'
     };
     this._options = Object.assign(this._options, options);
     this._characterSet = {};
@@ -227,7 +229,7 @@ export class CharacterSetBuilder {
    * Load the Unicode.org confusables into the character set.
    */
   private loadUnicodeConfusables(): void {
-    fs.readFileSync(new URL('../lists/confusables.txt', import.meta.url), 'utf-8')
+    fs.readFileSync(new URL('../lists/confusablesUnicode.txt', import.meta.url), 'utf-8')
       .toString()
       .split('\r\n')
       .filter((item) => item.length !== 0 && !item.startsWith('#'))
@@ -242,7 +244,7 @@ export class CharacterSetBuilder {
         this.addConfusables(key, values);
       });
 
-    const whitelist: Whitelist = JSON.parse(fs.readFileSync(new URL('../lists/whitelist.json', import.meta.url), 'utf-8'));
+    const whitelist: Whitelist = JSON.parse(fs.readFileSync(new URL('../lists/confusablesWhitelist.json', import.meta.url), 'utf-8'));
     this._whitelist.push(...whitelist.characters);
     this._whitelist.push(...whitelist.ranges.map((item) => {
       const string: string[] = [];
@@ -262,7 +264,7 @@ export class CharacterSetBuilder {
    * Load the local confusables into the character set.
    */
   private loadLocalConfusables(): void {
-    const confusables: Confusables = JSON.parse(fs.readFileSync(new URL('../lists/newConfusables.json', import.meta.url), 'utf-8'));
+    const confusables: Confusables = JSON.parse(fs.readFileSync(new URL('../lists/confusablesPackage.json', import.meta.url), 'utf-8'));
     // Add alphabet sets.
     for (let i = 0, c = confusables.alphabetSets, len = c.length; i < len; i++) {
       for (let j = 0, alphabetLen = c[i].alphabet.length; j < alphabetLen; j++) {

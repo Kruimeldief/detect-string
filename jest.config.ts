@@ -14,6 +14,9 @@ const config: Config = {
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
+  transform: {
+    "\\.(ts|js)x?$": "ts-jest",
   }
 }
 
