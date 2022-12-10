@@ -1,7 +1,7 @@
 import type { ProfanityOptions, BSTBaseBuilderOptions } from '../../types.js';
 import fs from 'fs';
 import { BSTBaseBuilder } from '../binarySearchTreeBaseBuilder.js';
-import type { Profanity } from './profanity.js';
+import { Profanity } from './profanity.js';
 
 type ProfanityJSON = {
   sentences: {
@@ -31,8 +31,13 @@ export class ProfanityBuilder extends BSTBaseBuilder<Profanity> {
     }
   }
 
+  public build(): Profanity {
+    const trees = this.buildTrees();
+    return new Profanity(trees.strings, trees.rates);
+  }
+
   private loadProfanityList(): void {
-    const list: ProfanityJSON = JSON.parse(fs.readFileSync(new URL('../lists/profanity.json', import.meta.url), 'utf-8'));
+    const list: ProfanityJSON = JSON.parse(fs.readFileSync(new URL('../../../lists/profanity.json', import.meta.url), 'utf-8'));
     let sentences: string[] = [];
 
     // Build-up the variations from the sentences.

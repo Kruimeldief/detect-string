@@ -11,26 +11,32 @@ type StrictUnion<T> = T extends any
 /* End of source */
 type EnumTypeHelper<Enum, T, Keys extends keyof Enum = keyof Enum> = Partial<Record<Keys, T>>
 type EnumType<Enum, T> = StrictUnion<EnumTypeHelper<Enum, T>>
+export type PurifyOptions = EnumType<typeof Purifier, PurifyOption>;
+
+export type RateOption = 'overwrite' | 'useLowest' | 'useHighest' | 'skip' | 'throwError';
+type IncludeOption = 'include' | 'exclude';
+type PurifyOption = 'allow' | 'purify' | 'remove';
 
 /* Constructor options */
-export type RateOption = 'overwrite' | 'useLowest' | 'useHighest' | 'skip' | 'throwError';
-type PurifyOption = 'allow' | 'purify' | 'remove';
-type IncludeOption = 'include' | 'exclude';
-export type UnicodeOptions = EnumType<typeof Purifier, PurifyOption>;
-export type CSBOptions = ConfusableOptions & UnicodeOptions;
-export type FilterOptions = BSTBaseBuilderOptions & CSBOptions;
-export type BSTBaseBuilderOptions = { // Binary Search Tree Builder Options
+export type FilterOptions = 
+  & ConfusablesOptions;
+export type ConfusablesOptions = 
+  & BSTBaseBuilderOptions
+  & PurifyOptions
+  & {
+    confusablesByUnicode?: IncludeOption,
+    confusablesByPackage?: IncludeOption,
+  };
+export type ProfanityOptions = 
+  & BSTBaseBuilderOptions
+  & {
+    defaultProfanityList?: IncludeOption,
+  }
+export type BSTBaseBuilderOptions = {
   doubleRating?: RateOption
 }
-export type ProfanityOptions = BSTBaseBuilderOptions & {
-  defaultProfanityList?: IncludeOption,
-}
-export type ConfusableOptions = {
-  confusablesByUnicode?: IncludeOption,
-  confusablesByPackage?: IncludeOption,
-}
 
-/* Multi-use types */
+/* Global types */
 export type Match = {
   string: string,
   rate: number,

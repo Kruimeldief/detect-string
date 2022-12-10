@@ -1,11 +1,10 @@
 import { regexFormat, removeDuplicates } from './utils.js';
 import fs from 'fs';
-import type { CSBOptions } from './types.js';
+import type { ConfusablesOptions } from './types.js';
 
 export type confusableSet = Record<string, string[]>;
 type RegexSet = Record<string, RegExp>;
 
-// Property and value should be identical 
 /**
  * Property and value should be identical to update
  * the character set options.
@@ -121,13 +120,13 @@ export class CharacterSetBuilder {
   /**
    * CSB options to specify the character set build.
    */
-  private readonly _options: CSBOptions;
+  private readonly _options: ConfusablesOptions;
 
   private _characterSet: confusableSet;
 
   private _whitelist: string[];
 
-  public constructor(options?: CSBOptions) {
+  public constructor(options?: ConfusablesOptions) {
     this._options = {
       confusablesByUnicode: 'exclude',
       confusablesByPackage: 'include',

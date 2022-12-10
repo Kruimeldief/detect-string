@@ -1,4 +1,4 @@
-import { searchPerformance } from "./indexTests.js";
+import { examples } from "./indexTests.js";
 
 
-searchPerformance();
+examples();

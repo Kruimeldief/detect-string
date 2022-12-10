@@ -1,7 +1,7 @@
 import type { Profanity } from "./binarySearchTree/profanity/profanity.js";
 import { ProfanityBuilder } from "./binarySearchTree/profanity/profanityBuilder.js";
 import { CharacterSetBuilder, Purifier, confusableSet } from "./characterSetBuilder.js";
-import type { ProfanityOptions, CSBOptions, FilterOptions, RateOption, UnicodeOptions, Match } from "./types.js";
+import type { ProfanityOptions, ConfusablesOptions, FilterOptions, RateOption, PurifyOptions, Match } from "./types.js";
 
 type Matches = {
   purified: string,
@@ -87,12 +87,12 @@ export class FilterBuilder {
 
   private _purifierList: PurifierList;
 
-  private _unicodeOptions: UnicodeOptions;
+  private _unicodeOptions: PurifyOptions;
 
   constructor(options?: FilterOptions) {
     const bstbOptions: ProfanityOptions = options || {};
     this._profanityBuilder = new ProfanityBuilder(bstbOptions);
-    const csbOptions: CSBOptions = options || {};
+    const csbOptions: ConfusablesOptions = options || {};
     this._confusableBuilder = new CharacterSetBuilder(csbOptions);
     this._purifierList = [];
     this._unicodeOptions = options || {};
@@ -130,7 +130,7 @@ export class FilterBuilder {
 
   public build(): Filter {
     const cs = this._confusableBuilder.build();
-    const bst = this._profanityBuilder.build(cs);
+    const bst = this._profanityBuilder.setConfusables(cs).build();
     for (const key in Purifier) {
       const k = key as keyof typeof this._unicodeOptions;
       if (this._unicodeOptions[k] === 'purify') {

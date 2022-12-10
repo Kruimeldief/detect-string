@@ -1,7 +1,6 @@
-import type { ProfanityOptions, RateOption } from "../types.js";
+import type { BSTBaseBuilderOptions, RateOption } from "../types.js";
 import { removeDuplicates } from "../utils.js";
-import type { CharacterSet } from "../characterSetBuilder.js";
-import { BSTBase } from "./binarySearchTreeBase.js";
+import { CharacterSet } from "../characterSetBuilder.js";
 
 /**
  * Interface object to combine string and rate into a simple Node array.
@@ -11,6 +10,14 @@ interface Node {
   rate: number,
 }
 
+/**
+ * Interface object to return built trees for BST creation.
+ */
+interface Trees {
+  strings: string[],
+  rates: number[]
+}
+
 export abstract class BSTBaseBuilder<T> {
   /**
    * List with nodes.
@@ -18,19 +25,25 @@ export abstract class BSTBaseBuilder<T> {
   private _list: Node[];
   get list(): Node[] { return this._list; }
 
+  private _confusables: CharacterSet | null;
+  public setConfusables(confusables: CharacterSet): this {
+    this._confusables = confusables;
+    return this;
+  }
+
   /**
    * Binary search tree options.
    */
-  private readonly _options: ProfanityOptions;
+  private readonly _options: BSTBaseBuilderOptions;
 
   /**
    * Constructor.
    */
-  protected constructor(options?: ProfanityOptions) {
+  protected constructor(options?: BSTBaseBuilderOptions) {
     this._list = new Array<Node>();
+    this._confusables = null;
     this._options = {
-      doubleRating: 'throwError',
-      defaultProfanityList: 'include'
+      doubleRating: 'throwError'
     }
     Object.assign(this._options, options);
   }
@@ -116,35 +129,37 @@ export abstract class BSTBaseBuilder<T> {
   public abstract build(): T;
 
   /**
-   * Build the binary search tree.
-   * @returns Binary search tree.
+   * Build the binary search tree arrays.
+   * @returns Binary search tree arrays.
    */
-  private createTrees(characterSet?: CharacterSet): T {
+  protected buildTrees(): Trees {
     if (this._list.length === 0) {
       throw new Error('Tree contains no strings.');
     }
 
-    // Purify strings if specified.
-    if (characterSet !== undefined) {
+    // Purify strings if possible.
+    if (this._confusables instanceof CharacterSet) {
       for (let i = 0, len = this._list.length; i < len; i++) {
-        this._list[i].string = characterSet.purify(this._list[i].string);
+        this._list[i].string = this._confusables.purify(this._list[i].string);
       }
     }
 
     // Remove doubles created by purifying words.
     // Example: ['boob', 'b00b'] => ['boob', 'boob']
     // Reverse search to prevent finding itself if there are doubles.
+    // Reverse search to splice the latest added element and corret the firstly added element.
     for (let i = this._list.length - 1; i >= 0; i--) {
       const iDouble = this._list.indexOf(this._list[i]);
       if (iDouble > 0 && i !== iDouble) {
         this.fixDoubleRates(iDouble, this._list[i].rate, this._options.doubleRating);
+        this._list.splice(i, 1);
       }
     }
 
-    // Function incidentally also sorts the list to get the correct medians.
+    // Remove doubles and sort based on string to get the correct medians.
     this._list = removeDuplicates(this._list)
       .sort((a, b) => a.string.localeCompare(b.string));
-
+    
     // Length must be able to accomodate a complete tree.
     const length = this._list.length;
     const treeNodeSize = Math.pow(2, Math.ceil(Math.log2(length + 1)));
@@ -180,10 +195,9 @@ export abstract class BSTBaseBuilder<T> {
       i2++;
     }
 
-    
-
-    return this.activator<BSTBase>(BSTBase)
-
-    return new BSTBase(stringTree, rateTree) as T;
+    return {
+      strings: stringTree,
+      rates: rateTree
+    } as Trees;
   }
 }
