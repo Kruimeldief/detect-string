@@ -2,7 +2,7 @@ import { regexFormat, removeDuplicates } from './utils.js';
 import fs from 'fs';
 import type { ConfusablesOptions } from './types.js';
 
-export type confusableSet = Record<string, string[]>;
+export type confusablesSet = Record<string, string[]>;
 type RegexSet = Record<string, RegExp>;
 
 /**
@@ -76,7 +76,7 @@ export class CharacterSet {
    * @param characterSet Set of character regexes.
    * @param csOptions Character set options to specify functionalities and performance.
    */
-  public constructor(characterSet: confusableSet) {
+  public constructor(characterSet: confusablesSet) {
     this._keyList = Object.keys(characterSet);
     this._characterSet = {};
     for (let i = 0, len = this._keyList.length; i < len; i++) {
@@ -122,7 +122,7 @@ export class CharacterSetBuilder {
    */
   private readonly _options: ConfusablesOptions;
 
-  private _characterSet: confusableSet;
+  private _characterSet: confusablesSet;
 
   private _whitelist: string[];
 
@@ -145,7 +145,7 @@ export class CharacterSetBuilder {
     this.refactor();
   }
 
-  public add(set: confusableSet): this {
+  public add(set: confusablesSet): this {
     const keyList = Object.keys(set);
     for (let i = 0, len = keyList.length; i < len; i++) {
       const key = keyList[i];
@@ -162,7 +162,7 @@ export class CharacterSetBuilder {
   /**
    * Refactor keys and remove double values per key.
    */
-  public refactor(): this {
+  private refactor(): this {
     // Refactor keys by moving values from a key to another key if that key is found as a value in another key.
     let keyList: string[] = Object.keys(this._characterSet);
     for (let i = 0, len = keyList.length; i < len; i++) {

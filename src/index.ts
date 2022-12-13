@@ -1,4 +1,4 @@
-import { examples } from "./indexTests.js";
+import { testSlicer } from "./indexTests.js";
 
 
-examples();
+testSlicer();

@@ -14,34 +14,52 @@ type EnumType<Enum, T> = StrictUnion<EnumTypeHelper<Enum, T>>
 export type PurifyOptions = EnumType<typeof Purifier, PurifyOption>;
 
 export type RateOption = 'overwrite' | 'useLowest' | 'useHighest' | 'skip' | 'throwError';
+export type ascdesOption = 'ascending' | 'descending';
+export type OrderOptions = {
+  orderByCodePoint?: ascdesOption,
+  orderByRate?: ascdesOption,
+  orderByLength?: ascdesOption,
+}
 type IncludeOption = 'include' | 'exclude';
 type PurifyOption = 'allow' | 'purify' | 'remove';
 
 /* Constructor options */
-export type FilterOptions = 
-  & ConfusablesOptions;
+export type FilterBuilderOptions = 
+  & ProfanityOptions
+  & ConfusablesOptions
+  & FilterOptions;
+export type FilterOptions = {
+  sliceSize?: number
+}
 export type ConfusablesOptions = 
-  & BSTBaseBuilderOptions
+  & BSTBuilderOptions
   & PurifyOptions
   & {
     confusablesByUnicode?: IncludeOption,
     confusablesByPackage?: IncludeOption,
   };
 export type ProfanityOptions = 
-  & BSTBaseBuilderOptions
+  & BSTBuilderOptions
   & {
     defaultProfanityList?: IncludeOption,
   }
-export type BSTBaseBuilderOptions = {
+export type BSTBuilderOptions = {
   doubleRating?: RateOption
 }
+export type WhitelistOptions =
+  & BSTBuilderOptions
 
 /* Global types */
-export type Match = {
-  string: string,
-  rate: number,
-}
 export type TreeLists = {
   strings: string[],
   rates: number[],
 }
+export type Node = {
+  string: string,
+  rate: number,
+}
+export type Matches = {
+  purified: string,
+  matches: Node[],
+}
+export type PurifierList = ((string: string) => string)[]

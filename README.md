@@ -16,18 +16,18 @@ This is a work in progress. It has yet to distinguish itself from other filter p
 
 #### Upcoming features
 
-1. Apply a `slicer()` to the string before the scan.
+1. (DONE) Apply a `slicer()` to the string before the scan.
 2. Allow custom regex tests for each BST Node in a scan.
    - Improve performance by pre-building regex-ed BST words into a nested string array.
-3. Allow substitution characters for each slice at the cost of a lower scan performance.
+3. (TO TEST) Allow substitution characters for each slice at the cost of a lower scan performance.
    - In `BST.search()`, create a branch if the substitution character is identical to the same indexed character of the Node string.
       - At the cost of a immense blow to the scan performance.
       - Use a `backlog: {string: string, index: number}[]` to restart the search from that index. substitution (and custom regexes [3.]) should not be applied to that index.
-4. Add a whitelist to prevent false positive scan results.
+4. (TO TEST) Add a whitelist to prevent false positive scan results.
    - Show intersection of the wordlist and whitelist during the `build()`.
 5. Add a default list of English profanity.
 6. Don't ship the default list but `fetch()` them from this repository at the cost of the internet connection requirement and fetching delay.
-7. Decouple all features when possible and expose them through the facade pattern.
+7. (PROGRESS) Decouple all features when possible and expose them through the facade pattern.
 8. Add documentation.
 9. Add option `readThroughAll` to create a regex of the [wordlist in ascending length] to apply to the string.
 10. Add a minimum length option to which (variations of) bad language must adhere.
@@ -35,7 +35,7 @@ This is a work in progress. It has yet to distinguish itself from other filter p
    - Example: 'ass' removes 'ass hair' because if 'ass hair' matches the string, so does 'ass'.
    - Consider removing  such strings only of the rate is the same. Different rates may be used for profanity categories or separate lists.
    - Pre-build such a regex for `readThroughAll` [9.] too.
-12. Expose wordlist to user with options `{ byCodePoint?: 'asc' | 'dec', byRating?: 'asc' | 'dec' } as SortType`.
+12. Expose wordlist to user with options `{ byCodePoint?: 'asc' | 'dec', byRating?: 'asc' | 'dec', stringLength?: 'asc' | 'dec' } as SortType`.
 13. Use BST for purifying as well (keyList & valueList) and iterate through strings using BST.search().
    - Make a base BST to extent.
 

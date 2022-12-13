@@ -1,117 +1,198 @@
-// import type { BSTBOptions, BSTBBOptions } from '../options.js';
-// import fs from 'fs';
-// import { BSTBBuilder } from './binarySearchTreeBase.js';
+import type { BSTBuilderOptions, RateOption, Node } from "../types.js";
+import { removeDuplicates } from "../utils.js";
+import { CharacterSet } from "../characterSetBuilder.js";
 
-// /**
-//  * Return object for BinarySearchTree.search() function.
-//  */
-// export type Match = {
-//   string: string,
-//   rate: number,
-// }
+/**
+ * Interface object to return built trees for BST creation.
+ */
+interface Trees {
+  strings: string[],
+  rates: number[]
+}
 
-// type ProfanityJSON = {
-//   sentences: {
-//     rate: number,
-//     separator: string,
-//     variations: string[][]
-//   }[],
-//   words: {
-//     rate: number,
-//     strings: string[]
-//   }[]
-// }
+export abstract class BSTBuilder<T> {
+  /**
+   * List with nodes.
+   */
+  protected _list: Node[];
+  get list(): Node[] {
+    return this._list;
+  }
 
-// export class BST {
-//   /**
-//    * String tree nodes.
-//    */
-//   public readonly strings: string[];
+  protected _confusables: CharacterSet | null;
+  public setConfusables(confusables: CharacterSet): this {
+    this._confusables = confusables;
+    return this;
+  }
 
-//   /**
-//    * Rate tree nodes.
-//    */
-//   public readonly rates: number[];
+  /**
+   * Binary search tree options.
+   */
+  private readonly _options: BSTBuilderOptions;
 
-//   /**
-//    * Constructor.
-//    */
-//   public constructor(strings: string[], rates: number[]) {
-//     this.strings = strings;
-//     this.rates = rates;
-//   }
+  /**
+   * Constructor.
+   */
+  protected constructor(options?: BSTBuilderOptions) {
+    this._list = new Array<Node>();
+    this._confusables = null;
+    this._options = {
+      doubleRating: 'throwError'
+    }
+    Object.assign(this._options, options);
+  }
 
-//   /**
-//    * Search a string in the binary search tree.
-//    * @param string Input string.
-//    * @returns Informative object.
-//    */
-//   public search(string: string): Match | undefined {
-//     let i = 1;
-//     while (i <= this.strings.length) {
-//       const compare = this.strings[i - 1]?.localeCompare(string);
-//       if (typeof compare === 'undefined') {
-//         return;
-//       }
-//       if (compare === 0) {
-//         return {
-//           string: this.strings[i - 1],
-//           rate: this.rates[i - 1]
-//         } as Match;
-//       }
-//       if (compare < 0) {
-//         i = i * 2 + 1;
-//       }
-//       else {
-//         i = i * 2;
-//       }
-//     }
-//     return;
-//   }
-// }
+  /**
+   * Add a string or array of strings to the binary search tree. 
+   * @param strings Strings to include in the binary search tree.
+   * @param rate Rating of the strings (rank or severity).
+   */
+  public add(strings: string | string[], rate = 0, doubleRating?: RateOption): this {
+    if (typeof strings === 'string') {
+      strings = [strings];
+    }
 
-// export class BSTBuilder extends BSTBBuilder {
+    for (let i = 0, len = strings.length; i < len; i++) {
+      this.throwInvalid(strings[i]);
 
-//   /**
-//    * Constructor.
-//    */
-//   constructor(options?: BSTBOptions) {
-//     super(options as BSTBBOptions);
-//     const opts: BSTBOptions = {
-//       defaultProfanityList: 'include'
-//     };
-//     Object.assign(opts, options);
-//     if (opts.defaultProfanityList === 'include') {
-//       this.loadProfanityList();
-//     }
-//   }
+      // Check if string already exists.
+      const index = this._list.findIndex((item) => item.string === strings[i]);
+      if (index === -1) {
+        this._list.push({
+          string: strings[i],
+          rate: rate
+        } as Node)
+      }
+      else {
+        this.fixDoubleRates(index, rate, doubleRating);
+      }
+    }
+    return this;
+  }
 
-//   private loadProfanityList(): void {
-//     const list: ProfanityJSON = JSON.parse(fs.readFileSync(new URL('../lists/profanity.json', import.meta.url), 'utf-8'));
-//     let sentences: string[] = [];
+  private fixDoubleRates(index: number, rate: number, doubleRating?: RateOption): void {
+    switch (doubleRating || this._options.doubleRating) {
+      case 'skip':
+        return;
+      case 'overwrite':
+        this._list[index].rate = rate;
+        break;
+      case 'useHighest':
+        this._list[index].rate = Math.max(this._list[index].rate, rate);
+        break;
+      case 'useLowest':
+        this._list[index].rate = Math.min(this._list[index].rate, rate);
+        break;
+      case 'throwError':
+        throw new Error(
+          'Cannot add existing string "'
+          + this._list[index].string
+          + '" because doubleRate option is set to "throwError".');
+      default:
+        throw new Error('Invalid doubleRate option provided.');
+    }
+  }
 
-//     // Build-up the variations from the sentences.
-//     for (let i = 0, len = list.sentences.length; i < len; i++) {
-//       const obj = list.sentences[i];
-//       sentences = obj.variations[0];
-//       for (let j = 1, len = obj.variations.length; j < len; j++) {
-//         sentences = sentences.flatMap((str1) => {
-//           return obj.variations[j].map((str2) => {
-//             return (str1 + obj.separator + str2).trimEnd();
-//           });
-//         });
-//       }
-//       sentences = sentences.map((string) => string.replace(/(\s)\1+/g, '$1'));
+  /**
+   * Remove a string or array of strings from the binary search tree.
+   * @param strings Strings to remove from the binary search tree.
+   */
+  public remove(...strings: string[]): this {
+    for (let i = strings.length - 1; i >= 0; i--) {
+      this.throwInvalid(strings[i]);
+      if (this._list.length > 0) {
+        const index = this._list.findIndex((item) => item.string === strings[i]);
+        if (index !== -1) {
+          this._list.splice(index, 1);
+        }
+      }
+    }
+    return this;
+  }
 
-//       // Add sentences.
-//       for (let i = 0, len = sentences.length; i < len; i++) {
-//         this.add(sentences, obj.rate);
-//       }
-//     }
-//   }
+  /**
+   * Throw an error if the string is invalid.
+   * @param string String to validate.
+   */
+  protected throwInvalid(string: string): void {
+    const valid = string.length > 0;
+    if (!valid) {
+      throw new Error('String \'' + string + '\' cannot be empty.');
+    }
+  }
 
-//   public override build() {
-//     super();
+  public abstract build(): T;
+
+  /**
+   * Build the binary search tree arrays.
+   * @returns Binary search tree arrays.
+   */
+  protected buildTrees(): Trees {
+    if (this._list.length === 0) {
+      throw new Error('Tree contains no strings.');
+    }
+
+    // Purify strings if possible.
+    if (this._confusables instanceof CharacterSet) {
+      for (let i = 0, len = this._list.length; i < len; i++) {
+        this._list[i].string = this._confusables.purify(this._list[i].string);
+      }
+    }
+
+    // Remove doubles created by purifying words.
+    // Example: ['boob', 'b00b'] => ['boob', 'boob']
+    // Reverse search to prevent finding itself if there are doubles.
+    // Reverse search to splice the latest added element and corret the firstly added element.
+    for (let i = this._list.length - 1; i >= 0; i--) {
+      const iDouble = this._list.indexOf(this._list[i]);
+      if (iDouble > 0 && i !== iDouble) {
+        this.fixDoubleRates(iDouble, this._list[i].rate, this._options.doubleRating);
+        this._list.splice(i, 1);
+      }
+    }
+
+    // Remove doubles and sort based on string to get the correct medians.
+    this._list = removeDuplicates(this._list)
+      .sort((a, b) => a.string.localeCompare(b.string));
     
-//   }
-// }
+    // Length must be able to accomodate a complete tree.
+    const length = this._list.length;
+    const treeNodeSize = Math.pow(2, Math.ceil(Math.log2(length + 1)));
+
+    const stringTree = new Array<string>(this._list.length);
+    const rateTree = new Array<number>(this._list.length);
+
+    // Store next range for each next branch of nodes.
+    const ranges = new Array(treeNodeSize);
+    ranges[0] = [0, length];
+
+    // Store index for old and new array.
+    let i1 = 1; // strings' index (smaller length).
+    let i2 = 0; // trees' index (bigger length).
+
+    while (i1 <= length) {
+      const low = ranges[i2][0];
+      const high = ranges[i2][1];
+      if (low > high) {
+        i2++;
+        continue;
+      }
+
+      const mid = Math.floor((low + high) / 2);
+      stringTree[i2] = this._list[mid].string;
+      rateTree[i2] = this._list[mid].rate;
+
+      if (i1 * 2 <= treeNodeSize) {
+        ranges[i1 * 2 - 1] = [low, mid - 1];
+        ranges[i1 * 2] = [mid + 1, high];
+      }
+      i1++;
+      i2++;
+    }
+
+    return {
+      strings: stringTree,
+      rates: rateTree
+    } as Trees;
+  }
+}

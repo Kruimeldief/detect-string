@@ -1,6 +1,6 @@
 import { ProfanityBuilder } from "./binarySearchTree/profanity/profanityBuilder.js";
 import { CharacterSetBuilder } from "./characterSetBuilder.js";
-import { FilterBuilder } from "./filter.js";
+import { FilterBuilder } from "./filterBuilder.js";
 
 /**
  * Must do all tests in dedicated command prompt.
@@ -197,31 +197,58 @@ export const examples = (): void => {
     doubleRating: 'overwrite',
     // emojis: 'allow'
   })
-    .add([
+    .blacklistAdd([
       'pancake', 'candy', 'cookie', 'chocolate',
       'cupcake', 'pie', 'pastry', 'ice cream',
       'dessert', 'cake', 'doughnut', 'muffin'
     ], 1)
-    .add([
+    .blacklistAdd([
       'mushroom', 'cucumber', 'leek', 'onion',
       'beet', 'spinach', 'broccoolii', 'corn',
       'yam', 'tomato', 'pumpkin', 'asparagus',
     ], 2)
-    .add('pancake', 3, 'overwrite')
-    .remove('mushroom')
-    .add('pink mushroom') // No rate => use default 0
+    .blacklistAdd('pancake', 3, 'overwrite')
+    .blacklistRemove('mushroom')
+    .blacklistAdd('pink mushroom') // No rate => use default 0
     .build();
   
-  console.log(filter.scan('pancake'));
+  console.log(filter.search('pancake'));
   // Prints { purified: 'pancake', matches: [ { string: 'pancake', rate: 3 } ] }
   
-  console.log(filter.scan('chocolate'));
+  console.log(filter.search('chocolate'));
   // { purified: 'chocolate', matches: [{ string: 'chocolate', rate: 1 }] }
   
-  console.log(filter.scan('pink mushroom'));
+  console.log(filter.search('pink mushroom'));
   // Prints { purified: 'pink mushroom', matches: [{ string: 'pink mushroom', rate: 0 }] }
   
-  console.log(filter.scan('abc123')); // Never added
-  console.log(filter.scan('mushroom')); // Added and removed
+  console.log(filter.search('abc123')); // Never added
+  console.log(filter.search('mushroom')); // Added and removed
   // Both print { purified: 'abc123', matches: [] }
+}
+
+/**
+ * Show example of using the filter.
+ */
+export const testSlicer = (): void => {
+  const filter = new FilterBuilder()
+    .blacklistAdd([
+      'pancake', 'candy', 'cookie', 'chocolate',
+      'cupcake', 'pie', 'pastry', 'ice cream',
+      'dessert', 'cake', 'doughnut', 'muffin'
+    ], 1)
+    .blacklistAdd([
+      'mushroom', 'cucumber', 'leek', 'onion',
+      'beet', 'spinach', 'broccoolii', 'corn',
+      'yam', 'tomato', 'pumpkin', 'asparagus',
+    ], 2)
+    .blacklistAdd('pancake', 3, 'overwrite')
+    .blacklistRemove('mushroom')
+    .blacklistAdd('pink mushroom') // No rate => use default 0
+    .build();
+  
+  console.log(filter.search('Please make a pancake for me.'));
+  console.log(filter.search('chocolate'));
+  console.log(filter.search('pink mushroom'));
+  console.log(filter.search('abc123'));
+  console.log(filter.search('mushroom'));
 }

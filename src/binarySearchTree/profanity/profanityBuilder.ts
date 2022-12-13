@@ -1,9 +1,9 @@
-import type { ProfanityOptions, BSTBaseBuilderOptions } from '../../types.js';
+import type { ProfanityOptions, BSTBuilderOptions } from '../../types.js';
 import fs from 'fs';
-import { BSTBaseBuilder } from '../binarySearchTreeBaseBuilder.js';
+import { BSTBuilder } from '../binarySearchTreeBuilder.js';
 import { Profanity } from './profanity.js';
 
-type ProfanityJSON = {
+export type ProfanityJSON = {
   sentences: {
     rate: number,
     separator: string,
@@ -15,15 +15,16 @@ type ProfanityJSON = {
   }[]
 }
 
-export class ProfanityBuilder extends BSTBaseBuilder<Profanity> {
+export class ProfanityBuilder extends BSTBuilder<Profanity> {
 
   /**
    * Constructor.
    */
-  constructor(options?: ProfanityOptions) {
-    super(options as BSTBaseBuilderOptions);
+  public constructor(options?: ProfanityOptions) {
+    super(options as BSTBuilderOptions);
     const opts: ProfanityOptions = {
-      defaultProfanityList: 'include'
+      defaultProfanityList: 'exclude',
+      doubleRating: 'skip'
     };
     Object.assign(opts, options);
     if (opts.defaultProfanityList === 'include') {
@@ -47,15 +48,15 @@ export class ProfanityBuilder extends BSTBaseBuilder<Profanity> {
       for (let j = 1, len = obj.variations.length; j < len; j++) {
         sentences = sentences.flatMap((str1) => {
           return obj.variations[j].map((str2) => {
-            return (str1 + obj.separator + str2).trimEnd();
+            return (str1 + obj.separator + str2);
           });
         });
       }
-      sentences = sentences.map((string) => string.replace(/(\s)\1+/g, '$1'));
+      sentences = sentences.map((string) => string.replace(/(\s)\1+/g, '$1').trim());
 
       // Add sentences.
       for (let i = 0, len = sentences.length; i < len; i++) {
-        this.add(sentences, obj.rate);
+        this.add(sentences, obj.rate, 'skip');
       }
     }
   }

@@ -1,6 +1,6 @@
 import { BST } from "../binarySearchTree.js";
 
-export class Profanity extends BST {
+export class Whitelist extends BST {
 
   /**
    * Constructor.
