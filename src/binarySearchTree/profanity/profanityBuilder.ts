@@ -17,6 +17,8 @@ export type ProfanityJSON = {
 
 export class ProfanityBuilder extends BSTBuilder<Profanity> {
 
+  private _replacements: [string, string][];
+
   /**
    * Constructor.
    */
@@ -30,11 +32,17 @@ export class ProfanityBuilder extends BSTBuilder<Profanity> {
     if (opts.defaultProfanityList === 'include') {
       this.loadProfanityList();
     }
+    this._replacements = [];
+  }
+
+  public addReplacement(original: string, replacement: string): this {
+    this._replacements.push([original, replacement]);
+    return this;
   }
 
   public build(): Profanity {
     const trees = this.buildTrees();
-    return new Profanity(trees.strings, trees.rates);
+    return new Profanity(trees.strings, trees.rates, this._replacements);
   }
 
   private loadProfanityList(): void {

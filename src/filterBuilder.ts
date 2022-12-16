@@ -17,8 +17,6 @@ export class FilterBuilder {
 
   private _purifierList: PurifierList;
 
-  private _replacements: [string, string][];
-
   private readonly _options: FilterBuilderOptions;
 
   constructor(options?: FilterBuilderOptions) {
@@ -29,7 +27,6 @@ export class FilterBuilder {
     const csbOptions: ConfusablesOptions = options || {};
     this._confusableBuilder = new CharacterSetBuilder(csbOptions);
     this._purifierList = [];
-    this._replacements = [];
     this._options = options || {};
   }
 
@@ -69,7 +66,7 @@ export class FilterBuilder {
   }
 
   public replacementsAdd(original: string, replacement: string): this {
-    this._replacements.push([original, replacement]);
+    this._profanityBuilder.addReplacement(original, replacement);
     return this;
   }
 
@@ -92,7 +89,6 @@ export class FilterBuilder {
       profanity,
       whitelist,
       this._purifierList,
-      this._replacements,
       this._options as FilterOptions
     );
   }

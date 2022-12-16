@@ -4,19 +4,28 @@ export abstract class BST {
   /**
    * String tree nodes.
    */
-  private readonly _strings: string[];
+  protected readonly _strings: string[];
 
   /**
    * Rate tree nodes.
    */
-  private readonly _rates: number[];
+  protected readonly _rates: number[];
+
+  /**
+   * Number of tree nodes.
+   */
+  protected readonly _size: number;
 
   /**
    * Constructor.
    */
   protected constructor(strings: string[], rates: number[]) {
+    if (strings.length !== rates.length) {
+      throw new Error('Array of strings and rates must be of same length.');
+    }
     this._strings = strings;
     this._rates = rates;
+    this._size = strings.length;
   }
 
   public getList(options?: OrderOptions): Node[] {
@@ -61,26 +70,5 @@ export abstract class BST {
     return list;
   }
 
-  public search(string: string): Node | undefined {
-    let i = 1;
-    while (i <= this._strings.length) {
-      const compare = this._strings[i - 1]?.localeCompare(string);
-      if (typeof compare === 'undefined') {
-        return;
-      }
-      if (compare === 0) {
-        return {
-          string: this._strings[i - 1],
-          rate: this._rates[i - 1]
-        } as Node;
-      }
-      if (compare < 0) {
-        i = i * 2 + 1;
-      }
-      else {
-        i = i * 2;
-      }
-    }
-    return;
-  }
+  public abstract search(string: string): Node[] | Node | undefined;
 }
