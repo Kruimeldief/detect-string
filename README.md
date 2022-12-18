@@ -19,25 +19,26 @@ This is a work in progress. It has yet to distinguish itself from other filter p
 1. (DONE) Apply a `slicer()` to the string before the scan.
 2. Allow custom regex tests for each BST Node in a scan.
    - Improve performance by pre-building regex-ed BST words into a nested string array.
-3. (TO TEST) Allow substitution characters for each slice at the cost of a lower scan performance.
-   - In `BST.search()`, create a branch if the substitution character is identical to the same indexed character of the Node string.
-      - At the cost of a immense blow to the scan performance.
-      - Use a `backlog: {string: string, index: number}[]` to restart the search from that index. substitution (and custom regexes [3.]) should not be applied to that index.
-4. (TO TEST) Add a whitelist to prevent false positive scan results.
+
+3. (TO TEST) Add a whitelist to prevent false positive scan results.
    - Show intersection of the wordlist and whitelist during the `build()`.
-5. Add a default list of English profanity.
-6. Don't ship the default list but `fetch()` them from this repository at the cost of the internet connection requirement and fetching delay.
-7. (PROGRESS) Decouple all features when possible and expose them through the facade pattern.
-8. Add documentation.
-9. Add option `readThroughAll` to create a regex of the [wordlist in ascending length] to apply to the string.
-10. Add a minimum length option to which (variations of) bad language must adhere.
-11. Wordlist searches itself with `new RegExp('\\b' + strings.join('|') + '\\b')` for bad language to remove redundant strings.
+4. Add a default list of English profanity.
+5. Don't ship the default list but `fetch()` them from this repository at the cost of the internet connection requirement and fetching delay.
+6. (PROGRESS) Decouple all features when possible and expose them through the facade pattern.
+7. Add documentation.
+8. Add option `readThroughAll` to create a regex of the [wordlist in ascending length] to apply to the string.
+9. Add a minimum length option to which (variations of) bad language must adhere.
+10. Wordlist searches itself with `new RegExp('\\b' + strings.join('|') + '\\b')` for bad language to remove redundant strings.
    - Example: 'ass' removes 'ass hair' because if 'ass hair' matches the string, so does 'ass'.
    - Consider removing  such strings only of the rate is the same. Different rates may be used for profanity categories or separate lists.
    - Pre-build such a regex for `readThroughAll` [9.] too.
-12. Expose wordlist to user with options `{ byCodePoint?: 'asc' | 'dec', byRating?: 'asc' | 'dec', stringLength?: 'asc' | 'dec' } as SortType`.
-13. Use BST for purifying as well (keyList & valueList) and iterate through strings using BST.search().
+11. Expose wordlist to user with options `{ byCodePoint?: 'asc' | 'dec', byRating?: 'asc' | 'dec', stringLength?: 'asc' | 'dec' } as SortType`.
+12. Use BST for purifying as well (keyList & valueList) and iterate through strings using BST.search().
    - Make a base BST to extent.
+13. Allow any value for a rate. Store value in any array and use their index (as number) to specify string ratings in the rate aray. Use bit-wise to allow for words to have multiple ratings. Ratings can be used for anything: string severity, word language, dictionary, etc.
+14. Add modified-string checks to avoid unnecessary searches.
+    - Modified-string should be between min. and max. length of BST strings.
+    - ...?
 
 #### Optimalisations
 
@@ -45,6 +46,18 @@ This is a work in progress. It has yet to distinguish itself from other filter p
 - Perhaps refactor facade `Filter` to their respective classes to improve performance, but at the cost of user friendliness.
 - Change `rate` to type `string` and store them in a `rateIdentifiers: array[]`. The index is used for `rates: number[]`.
 - Find a way to optimise all regexes. [see 13.]
+
+#### Shelved features
+
+1. Allow substitution characters for each slice.
+   - Example: string `bitchez` becomes `bitches` and vica versa.
+   - Feature is performance heavy that (up to) squares the processing time per single substitution.
+   - Approach:
+      - In `Profanity.search()`, create a branch if the substitution character is identical to the same index character of the Node string.
+      - Use an object `{ string: string, ti: number, ri: number }[]` from which to start each search.
+         - `ti`: tree index to skip previously checked words.
+         - `ri`: replacement index to prevent substituting previousl substituted characters.
+   - Reason: disadvantages of false positives and performance impact outweighs its advantage of catching filter by-passes.
 
 ## Install
 

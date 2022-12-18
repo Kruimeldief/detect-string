@@ -44,22 +44,15 @@ export type ProfanityOptions =
     defaultProfanityList?: IncludeOption,
   }
 export type BSTBuilderOptions = {
-  doubleRating?: RateOption
+  defaultCategory?: any,
+  allowMultipleCategories?: boolean
 }
 export type WhitelistOptions =
-  & BSTBuilderOptions
+  & BSTBuilderOptions;
 
-/* Global types */
-export type TreeLists = {
-  strings: string[],
-  rates: number[],
-}
-export type Node = {
-  string: string,
-  rate: number,
-}
-export type Matches = {
-  purified: string,
-  matches: Node[],
-}
+
+/* Global types (no constructor options) */
 export type PurifierList = ((string: string) => string)[]
+export type defaultCategory = number;
+
+/* Global interfaces */

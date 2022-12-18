@@ -129,7 +129,7 @@ export class CharacterSetBuilder {
   public constructor(options?: ConfusablesOptions) {
     this._options = {
       confusablesByUnicode: 'exclude',
-      confusablesByPackage: 'include',
+      confusablesByPackage: 'exclude',
       confusables: 'purify',
       // emojis: 'allow'
     };

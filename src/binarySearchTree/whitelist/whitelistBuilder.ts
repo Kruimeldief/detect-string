@@ -4,15 +4,11 @@ import { Whitelist } from './whitelist.js';
 
 export class WhitelistBuilder extends BSTBuilder<Whitelist> {
 
-  /**
-   * Constructor.
-   */
   public constructor(options?: WhitelistOptions) {
     super(options as BSTBuilderOptions);
   }
 
   public build(): Whitelist {
-    const trees = this.buildTrees();
-    return new Whitelist(trees.strings, trees.rates);
+    return new Whitelist(this.buildTrees().stringTree);
   }
 }

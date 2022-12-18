@@ -1,16 +1,22 @@
-import type { BSTBuilderOptions, RateOption, Node } from "../types.js";
+import type { BSTBuilderOptions, defaultCategory } from "../types.js";
 import { removeDuplicates } from "../utils.js";
 import { CharacterSet } from "../characterSetBuilder.js";
 
 /**
  * Interface object to return built trees for BST creation.
  */
-interface Trees {
-  strings: string[],
-  rates: number[]
+interface TreeArrays {
+  stringTree: string[],
+  categoryTree: Uint8Array | Uint16Array | Uint32Array
 }
 
-export abstract class BSTBuilder<T> {
+interface Node {
+  string: string,
+  iCategory: number[]
+}
+
+export abstract class BSTBuilder<ClassT, CategoryT = defaultCategory> {
+
   /**
    * List with nodes.
    */
@@ -25,10 +31,12 @@ export abstract class BSTBuilder<T> {
     return this;
   }
 
+  protected _categories: CategoryT[];
+
   /**
    * Binary search tree options.
    */
-  private readonly _options: BSTBuilderOptions;
+  protected readonly _options: BSTBuilderOptions;
 
   /**
    * Constructor.
@@ -36,61 +44,92 @@ export abstract class BSTBuilder<T> {
   protected constructor(options?: BSTBuilderOptions) {
     this._list = new Array<Node>();
     this._confusables = null;
+    this._categories = [];
     this._options = {
-      doubleRating: 'throwError'
+      defaultCategory: 0,
+      allowMultipleCategories: true
     }
     Object.assign(this._options, options);
   }
 
   /**
-   * Add a string or array of strings to the binary search tree. 
-   * @param strings Strings to include in the binary search tree.
-   * @param rate Rating of the strings (rank or severity).
+   * Add a string to the binary search tree.
    */
-  public add(strings: string | string[], rate = 0, doubleRating?: RateOption): this {
+  public add(string: string): this;
+  /**
+   * Add multiple strings to the binary search tree.
+   */
+  public add(strings: string[]): this;
+  /**
+   * Add a categorised string to the binary search tree.
+   */
+  public add(string: string, category: CategoryT): this;
+  /**
+   * Add multiple categorised strings to the binary search tree.
+   */
+  public add(strings: string[], category: CategoryT): this;
+  /**
+   * Add a multi-categorised string to the binary search tree.
+   */
+  public add(string: string, categories: CategoryT[]): this;
+  /**
+   * Add multiple multi-categorised strings to the binary search tree.
+   */
+  public add(strings: string[], categories: CategoryT[]): this;
+  public add(strings: string | string[], categories?: CategoryT | CategoryT[]): this {
+    // Make all arguments instance of array.
     if (typeof strings === 'string') {
       strings = [strings];
     }
+    if (typeof categories === 'undefined') {
+      categories = [this._options.defaultCategory];
+    }
+    else if (!(categories instanceof Array)) {
+      categories = [categories];
+    }
 
+    // Index categories.
+    const iCats: number[] = [];
+    for (let i = 0, len = categories.length; i < len; i++) {
+      let iCat = this._categories.indexOf(categories[i]);
+      if (iCat === -1) {
+        this._categories.push(categories[i]);
+        iCat = this._categories.length - 1;
+      }
+      iCats.push(iCat);
+    }
+
+    // Check if multiple categories are allowed.
+    if (this._options.allowMultipleCategories && iCats.length > 1) {
+      this.throwCategories();
+    }
+
+    // Add strings and categories.
     for (let i = 0, len = strings.length; i < len; i++) {
       this.throwInvalid(strings[i]);
 
-      // Check if string already exists.
-      const index = this._list.findIndex((item) => item.string === strings[i]);
-      if (index === -1) {
+      // Push new strings, or add categories to existing strings.
+      const iString = this._list.findIndex(v =>  v.string === strings[i]);
+      if (iString === -1) {
         this._list.push({
           string: strings[i],
-          rate: rate
-        } as Node)
+          iCategory: iCats
+        });
       }
       else {
-        this.fixDoubleRates(index, rate, doubleRating);
+        const cats = this._list[iString].iCategory;
+        for (let j = 0, len = cats.length; j < len; j++) {
+          if (cats.indexOf(iCats[j]) === -1) {
+            this._list[iString].iCategory.push(iCats[j]);
+          }
+        }
+        // Check if multiple categories are allowed.
+        if (!this._options.allowMultipleCategories && this._list[iString].iCategory.length > 1) {
+          this.throwCategories();
+        }
       }
     }
     return this;
-  }
-
-  private fixDoubleRates(index: number, rate: number, doubleRating?: RateOption): void {
-    switch (doubleRating || this._options.doubleRating) {
-      case 'skip':
-        return;
-      case 'overwrite':
-        this._list[index].rate = rate;
-        break;
-      case 'useHighest':
-        this._list[index].rate = Math.max(this._list[index].rate, rate);
-        break;
-      case 'useLowest':
-        this._list[index].rate = Math.min(this._list[index].rate, rate);
-        break;
-      case 'throwError':
-        throw new Error(
-          'Cannot add existing string "'
-          + this._list[index].string
-          + '" because doubleRate option is set to "throwError".');
-      default:
-        throw new Error('Invalid doubleRate option provided.');
-    }
   }
 
   /**
@@ -98,10 +137,10 @@ export abstract class BSTBuilder<T> {
    * @param strings Strings to remove from the binary search tree.
    */
   public remove(...strings: string[]): this {
-    for (let i = strings.length - 1; i >= 0; i--) {
+    for (let i = 0, len = strings.length; i < len; i++) {
       this.throwInvalid(strings[i]);
       if (this._list.length > 0) {
-        const index = this._list.findIndex((item) => item.string === strings[i]);
+        const index = this._list.findIndex(v => v.string === strings[i]);
         if (index !== -1) {
           this._list.splice(index, 1);
         }
@@ -115,19 +154,22 @@ export abstract class BSTBuilder<T> {
    * @param string String to validate.
    */
   protected throwInvalid(string: string): void {
-    const valid = string.length > 0;
-    if (!valid) {
+    if (string.length === 0) {
       throw new Error('String \'' + string + '\' cannot be empty.');
     }
   }
 
-  public abstract build(): T;
+  protected throwCategories() {
+    throw new Error('Strings cannot have multiple categories because allowMultipleCategories is set to ' + this._options.allowMultipleCategories);
+  }
+
+  public abstract build(): ClassT;
 
   /**
    * Build the binary search tree arrays.
    * @returns Binary search tree arrays.
    */
-  protected buildTrees(): Trees {
+  protected buildTrees(): TreeArrays {
     if (this._list.length === 0) {
       throw new Error('Tree contains no strings.');
     }
@@ -146,21 +188,49 @@ export abstract class BSTBuilder<T> {
     for (let i = this._list.length - 1; i >= 0; i--) {
       const iDouble = this._list.indexOf(this._list[i]);
       if (iDouble > 0 && i !== iDouble) {
-        this.fixDoubleRates(iDouble, this._list[i].rate, this._options.doubleRating);
+        this._list[iDouble].iCategory = removeDuplicates(
+          [this._list[iDouble].iCategory, this._list[i].iCategory].flat()
+        );
         this._list.splice(i, 1);
       }
     }
 
-    // Remove doubles and sort based on string to get the correct medians.
-    this._list = removeDuplicates(this._list)
-      .sort((a, b) => a.string.localeCompare(b.string));
+    // Sort based on string to get the correct medians.
+    this._list = this._list.sort((a, b) => a.string.localeCompare(b.string));
+
+    // Remove unused categories.
+    const categories: CategoryT[] = [];
+    for (let iCat = 0, len = this._categories.length; iCat < len; iCat++) {
+      if (!this._list.some(v => v.iCategory.includes(iCat))) {
+        continue;
+      }
+      categories.push(this._categories[iCat]);
+      const newICat = categories.length - 1;
+      if (iCat === newICat) {
+        continue;
+      }
+      // Correct the iCateogry with the new category index.
+      for (let iList = 0, len = this._list.length; iList < len; iList++) {
+        this._list[iList].iCategory = this._list[iList].iCategory.map(v => v === iCat ? newICat : v);
+      }
+    }
+    this._categories = categories;
+
+    // Determine length of category tree bit mask.
+    const catSize = Math.pow(2, Math.ceil(Math.log2(this._categories.length)));
+    if (catSize > 32) throw new Error('BST cannot have more than 32 categories.');
     
     // Length must be able to accomodate a complete tree.
     const length = this._list.length;
     const treeNodeSize = Math.pow(2, Math.ceil(Math.log2(length + 1)));
 
+    // Create tree arrays.
     const stringTree = new Array<string>(this._list.length);
-    const rateTree = new Array<number>(this._list.length);
+    const categoryTree = catSize === 8
+      ? new Uint8Array(length)
+      : catSize === 16
+        ? new Uint16Array(length)
+        : new Uint32Array(length);
 
     // Store next range for each next branch of nodes.
     const ranges = new Array(treeNodeSize);
@@ -179,8 +249,17 @@ export abstract class BSTBuilder<T> {
       }
 
       const mid = Math.floor((low + high) / 2);
+
+      // Create category mask
+      let catMask = 0;
+      for (let i = 0, len = this._categories.length; i < len; i++) {
+        if (this._list[mid].iCategory.includes(i)) {
+          catMask = catMask | 1 << i;
+        }
+      }
+
       stringTree[i2] = this._list[mid].string;
-      rateTree[i2] = this._list[mid].rate;
+      categoryTree[i2] = catMask;
 
       if (i1 * 2 <= treeNodeSize) {
         ranges[i1 * 2 - 1] = [low, mid - 1];
@@ -191,8 +270,8 @@ export abstract class BSTBuilder<T> {
     }
 
     return {
-      strings: stringTree,
-      rates: rateTree
-    } as Trees;
+      stringTree: stringTree,
+      categoryTree: categoryTree,
+    } as TreeArrays;
   }
 }

@@ -1,53 +1,59 @@
 import { Profanity } from "./binarySearchTree/profanity/profanity.js";
 import { Whitelist } from "./binarySearchTree/whitelist/whitelist.js";
-import { Matches, PurifierList, OrderOptions, Node, FilterOptions } from "./types.js";
+import { PurifierList, FilterOptions } from "./types.js";
 
-export class Filter {
+interface Node<T> {
+  category: T,
+  strings: string[]
+}
+interface Matches<T> {
+  query: string,
+  purified: string,
+  matches: Node<T>[],
+}
 
-  private _profanity: Profanity;
+export class Filter<CategoryT> {
+
+  private _profanity: Profanity<CategoryT>;
 
   private _whitelist: Whitelist | null;
 
   private _purifierList: PurifierList;
 
-  private _replacements: [string, string][];
-
   private readonly _options: FilterOptions;
 
   constructor(
-    profanity: Profanity,
+    profanity: Profanity<CategoryT>,
     whitelist: Whitelist | null,
     purifierList: PurifierList,
-    replacements: [string, string][],
     options: FilterOptions
   ) {
     this._profanity = profanity;
     this._whitelist = whitelist;
     this._purifierList = purifierList;
-    this._replacements = replacements;
-    this._options = {
-      sliceSize: 6
-    }
-    Object.assign(this._options, options);
+    this._options = options;
   }
 
-  public getBlacklist(options: OrderOptions): Node[] {
-    return this._profanity.getList(options);
-  }
-
-  public getWhitelist(options: OrderOptions): Node[] | null {
-    return this._whitelist instanceof Whitelist
-      ? this._whitelist.getList(options)
-      : null;
-  }
-
-  public search(string: string): Matches {
-    const matches: Matches = {
+  /**
+   * Search the string in all categories.
+   */
+  public search(string: string): Matches<CategoryT>;
+  /**
+   * Search the string in specified category.
+   */
+  public search(string: string, category: CategoryT): Matches<CategoryT>;
+  public search(string: string, category?: CategoryT): Matches<CategoryT> {
+    const result: Matches<CategoryT> = {
+      query: string,
       purified: this.purify(string),
       matches: []
     }
-    for (let i = 0, len = this._purifierList.length; i < len; i++) {
-      string = this._purifierList[i](string);
+
+    const lenPurifier = this._purifierList.length;
+    if (lenPurifier > 0) {
+      for (let i = 0; i < lenPurifier; i++) {
+        string = this._purifierList[i](string);
+      }
     }
 
     const searchSlice = (array: string[]): void => {
@@ -58,9 +64,9 @@ export class Filter {
         [/(\s)\1+/g, '$1'],       // Reduce double spaces to one
         [/(\w)\1+/g, '$1'],       // Reduce double letters to one
         [/(.)\1+/g, '$1'],        // Reduce double characters to one
-        [/(\s)\1{2,}/g, '$1$1'],  // Reduce 3+ spaces to two
-        [/(\w)\1{2,}/g, '$1$1'],  // Reduce 3+ letters to two
-        [/(.)\1{2,}/g, '$1$1'],   // Reduce 3+ characters to two
+        [/(\s)\1{2,}/g, '$1$1'],  // Reduce multiple spaces to two
+        [/(\w)\1{2,}/g, '$1$1'],  // Reduce multiple letters to two
+        [/(.)\1{2,}/g, '$1$1'],   // Reduce multiple characters to two
         [/[^a-zA-Z\s]/g, ''],     // Remove non-Latin letter (necessary?)
         [/[aeiou]/g, ''],         // Remove non-vowels (non-English compatible?)
       ];
@@ -68,21 +74,31 @@ export class Filter {
       // Processor intensive algorithm.
       for (let parts = 1, len = array.length, maxParts = Math.min(len, this._options.sliceSize || len); parts <= maxParts; parts++) {
         for (let i = 0; i <= len - parts; i++) {
-          let slice = array.slice(i, i + parts).join(' ');
+          // Build partial string from array.
+          const slice = array.slice(i, i + parts).join(' ');
+          if (this._whitelist?.search(slice)) {
+            continue;
+          }
           for (let iReg = 0, lenReg = regexList.length; iReg < lenReg; iReg++) {
-            for (let iRepl = -1, lenRepl = this._replacements.length; iRepl < lenRepl; iRepl++) {
-              if (iRepl !== -1) {
-                slice = slice.replace(this._replacements[i][0], this._replacements[i][1]);
+            // Modify string with regex.
+            const modified = slice.replace(regexList[iReg][0], regexList[iReg][1]);
+            const categories = category
+              ? this._profanity.search(modified, category)
+              : this._profanity.search(modified);
+            if (categories) {
+              // Add string match to each respective category.
+              for (let iCat = 0, lenCats = categories.length; iCat < lenCats; iCat++) {
+                const iCatMatch = result.matches.findIndex(v => v.category === categories[iCat]);
+                if (iCatMatch === -1) {
+                  result.matches.push({
+                    category: categories[iCat],
+                    strings: [modified]
+                  });
+                }
+                else if (!result.matches[iCatMatch].strings.includes(modified)) {
+                  result.matches[iCatMatch].strings.push(modified);
+                }
               }
-            }
-            // Check for new match that's not whitelisted.
-            const match = this._profanity.search(
-              slice.replace(regexList[iReg][0], regexList[iReg][1])
-            );
-            if (match
-              && !matches.matches.some((item) => item.string === match.string)
-              && (this._whitelist?.search(match?.string) || true)) {
-                matches.matches.push(match);
             }
           }
         }
@@ -92,7 +108,7 @@ export class Filter {
     searchSlice(string.split(' '));
     searchSlice(string.replace(/\s/g, '').split(/\W/g));
 
-    return matches;
+    return result;
   }
 
   public purify(string: string) {

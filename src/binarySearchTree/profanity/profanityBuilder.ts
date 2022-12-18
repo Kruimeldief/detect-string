@@ -1,4 +1,4 @@
-import type { ProfanityOptions, BSTBuilderOptions } from '../../types.js';
+import type { ProfanityOptions, BSTBuilderOptions, defaultCategory } from '../../types.js';
 import fs from 'fs';
 import { BSTBuilder } from '../binarySearchTreeBuilder.js';
 import { Profanity } from './profanity.js';
@@ -15,7 +15,7 @@ export type ProfanityJSON = {
   }[]
 }
 
-export class ProfanityBuilder extends BSTBuilder<Profanity> {
+export class ProfanityBuilder<CategoryT = defaultCategory> extends BSTBuilder<Profanity<CategoryT>, CategoryT> {
 
   /**
    * Constructor.
@@ -24,7 +24,6 @@ export class ProfanityBuilder extends BSTBuilder<Profanity> {
     super(options as BSTBuilderOptions);
     const opts: ProfanityOptions = {
       defaultProfanityList: 'exclude',
-      doubleRating: 'skip'
     };
     Object.assign(opts, options);
     if (opts.defaultProfanityList === 'include') {
@@ -32,9 +31,9 @@ export class ProfanityBuilder extends BSTBuilder<Profanity> {
     }
   }
 
-  public build(): Profanity {
+  public build(): Profanity<CategoryT> {
     const trees = this.buildTrees();
-    return new Profanity(trees.strings, trees.rates);
+    return new Profanity<CategoryT>(trees.stringTree, this._categories, trees.categoryTree);
   }
 
   private loadProfanityList(): void {
@@ -56,7 +55,7 @@ export class ProfanityBuilder extends BSTBuilder<Profanity> {
 
       // Add sentences.
       for (let i = 0, len = sentences.length; i < len; i++) {
-        this.add(sentences, obj.rate, 'skip');
+        this.add(sentences, this._options.defaultCategory);
       }
     }
   }

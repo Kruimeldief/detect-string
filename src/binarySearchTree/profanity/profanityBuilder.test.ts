@@ -8,7 +8,7 @@ describe('Constructor.', () => {
   test('Load default profanity list.', () => {
     const profanity = new ProfanityBuilder({
       defaultProfanityList: 'include',
-      doubleRating: 'skip',
+      defaultCategory: 'skip',
     });
     expect(profanity.list.length).toBeGreaterThan(0);
   });
@@ -16,19 +16,19 @@ describe('Constructor.', () => {
   test('Define default doubleRate option.', () => {
     const profanity = new ProfanityBuilder({
       defaultProfanityList: 'exclude',
-      doubleRating: 'overwrite',
+      defaultCategory: 'overwrite',
     }).add(string, 2)
       .add(string, 3);
-    expect(profanity.list[0].rate).toBe(3);
+    expect(profanity.list[0].category).toBe(3);
   });
 
   test('Overwrite default doubleRate option.', () => {
     const profanity = new ProfanityBuilder({
       defaultProfanityList: 'exclude',
-      doubleRating: 'overwrite',
+      defaultCategory: 'overwrite',
     }).add(string, 2)
       .add(string, 3, 'skip');
-    expect(profanity.list[0].rate).toBe(2);
+    expect(profanity.list[0].category).toBe(2);
   });
 
   test('Default doubleRate option should be to throw.', () => {
@@ -88,14 +88,14 @@ describe('Blacklist rate manipulations.', () => {
     const profanity = new ProfanityBuilder()
       .add(string, 2)
       .add(string, 3, 'overwrite');
-    expect(profanity.list[0].rate).toBe(3);
+    expect(profanity.list[0].category).toBe(3);
   });
 
   test('Add string with rateOption skip', () => {
     const profanity = new ProfanityBuilder()
       .add(string, 2)
       .add(string, 3, 'skip');
-    expect(profanity.list[0].rate).toBe(2);
+    expect(profanity.list[0].category).toBe(2);
   });
 
   test('Add string with rateOption overwrite', () => {
@@ -110,21 +110,21 @@ describe('Blacklist rate manipulations.', () => {
     const profanity = new ProfanityBuilder()
       .add(string, 2)
       .add(string, 3, 'useHighest');
-    expect(profanity.list[0].rate).toBe(3);
+    expect(profanity.list[0].category).toBe(3);
   });
 
   test('Add string with rateOption useLowest', () => {
     const profanity = new ProfanityBuilder()
       .add(string, 2)
       .add(string, 3, 'useLowest');
-    expect(profanity.list[0].rate).toBe(2);
+    expect(profanity.list[0].category).toBe(2);
   });
 });
 
 test('Load default profanity', () => {
   const profanity = new ProfanityBuilder({
     defaultProfanityList: 'include',
-    doubleRating: 'throwError'
+    defaultCategory: 'throwError'
   });
   const defaultProfanityListLength = (() => {
     const list: ProfanityJSON = JSON.parse(fs.readFileSync(new URL('../../../lists/profanity.json', import.meta.url), 'utf-8'));
